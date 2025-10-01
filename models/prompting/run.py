@@ -1,84 +1,79 @@
-from pathlib import Path
-import os
+from __future__ import annotations
+import sys
 import time
+from pathlib import Path
 import pandas as pd
 from tqdm import tqdm
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
+from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 
 ROOT = Path(__file__).resolve().parents[2]
-TEST_DATA_PATH = ROOT / "datasets" / "test_dataset.csv"
-PREDICTION_PATH = ROOT / "results" / "predictions"
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))
 
-prompt_template_name = "prompt_t1_01_base-template.txt"
-llm_name = "qwen-0.5b"
+from clarity import Config, build_prompt, load_template, resolve_model_id
 
-out_path = os.path.join(
-    PREDICTION_PATH, f"test_{llm_name}_{prompt_template_name}.csv"
-)
 
-MODEL_REGISTRY = {
-    # LLaMA family
-    "llama-2-7b-chat": "meta-llama/Llama-2-7b-chat-hf",
-    "llama-2-13b-chat": "meta-llama/Llama-2-13b-chat-hf",
-    "llama-2-70b-chat": "meta-llama/Llama-2-70b-chat-hf",
-
-    # Qwen family
-    "qwen-0.5b": "Qwen/Qwen1.5-0.5B-Chat",
-    "qwen-1.8b": "Qwen/Qwen1.5-1.8B-Chat",
-    "qwen-7b": "Qwen/Qwen1.5-7B-Chat",
-
-    # Other models
-    "mistral-7b": "mistralai/Mistral-7B-Instruct-v0.2",
-    "phi-2.7b": "microsoft/phi-2",
-    "falcon-7b": "tiiuae/falcon-7b-instruct",
-}
-
-test_df = pd.read_csv(TEST_DATA_PATH)
-print(f"Loaded {len(test_df)} rows of the test set")
-
-def build_prompt(question, answer, prompt_template):
-    template_path = os.path.join("prompts", prompt_template)
-    with open(template_path, "r", encoding="utf-8") as f:
-        template = f.read()
-    return template.format(question=question, answer=answer)
-
-def get_pipeline(llm_name):
-    model_id = MODEL_REGISTRY[llm_name]
+def build_text_generation_pipeline(model_name: str):
+    """Instantiate a text-generation pipeline for the requested model."""
+    model_id = resolve_model_id(model_name)
     tokenizer = AutoTokenizer.from_pretrained(model_id)
     model = AutoModelForCausalLM.from_pretrained(model_id)
     return pipeline("text-generation", model=model, tokenizer=tokenizer)
 
-pred_col = f"{llm_name}_{prompt_template_name}"
-if pred_col not in test_df.columns:
-    test_df[pred_col] = None
 
-pipe = get_pipeline(llm_name)
+def prepare_dataframe(df: pd.DataFrame, prediction_column: str) -> None:
+    if prediction_column not in df.columns:
+        df[prediction_column] = None
 
-for i, row in tqdm(test_df.iterrows(), total=len(test_df), desc="Processing"):
-    if pd.notna(row[pred_col]):
-        continue
 
-    prompt = build_prompt(
-        row["question"], row["interview_answer"], prompt_template_name
-    )
-    raw_output = pipe(
-        prompt,
-        max_new_tokens=100,
-        do_sample=False
-    )[0]["generated_text"]
-    # Remove the echoed prompt
-    prediction = raw_output[len(prompt):].strip()
+def main(config: Config | None = None) -> None:
+    config = config or Config()
 
-    test_df.at[i, pred_col] = prediction
+    test_df = pd.read_csv(config.test_csv)
+    print(f"Loaded {len(test_df)} rows of the test set")
 
-    print(f"Question: {row['question']}")
-    # print(f"Answer: {row['interview_answer']}")
-    print(f"Prediction: {prediction}\n\n")
+    prediction_column = f"{config.model_name}_{Path(config.template_name).stem}"
+    prepare_dataframe(test_df, prediction_column)
 
-    if (i+1) % 10 == 0:
-        test_df.to_csv(out_path, index=False)
-    
-    time.sleep(1)
+    template = load_template(config.prompts_dir, config.template_name)
+    generator = build_text_generation_pipeline(config.model_name)
 
-test_df.to_csv(out_path, index=False)
-print(f"Saved predictions → {out_path}")
+    output_path = config.output_csv()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    for idx, row in tqdm(
+        test_df.iterrows(), total=len(test_df), desc="Processing", unit="row"
+    ):
+        if pd.notna(row[prediction_column]):
+            continue
+
+        prompt = build_prompt(
+            template,
+            question=row["question"],
+            answer=row["interview_answer"],
+        )
+
+        raw_output = generator(
+            prompt,
+            max_new_tokens=config.max_new_tokens,
+            do_sample=config.do_sample,
+        )[0]["generated_text"]
+
+        prediction = raw_output[len(prompt) :].strip()
+        test_df.at[idx, prediction_column] = prediction
+
+        print(f"Question: {row['question']}")
+        print(f"Prediction: {prediction}\n")
+
+        if config.checkpoint_interval and (idx + 1) % config.checkpoint_interval == 0:
+            test_df.to_csv(output_path, index=False)
+
+        if config.sleep_sec:
+            time.sleep(config.sleep_sec)
+
+    test_df.to_csv(output_path, index=False)
+    print(f"Saved predictions to {output_path}")
+
+
+if __name__ == "__main__":
+    main()
