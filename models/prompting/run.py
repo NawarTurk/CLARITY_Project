@@ -1,11 +1,13 @@
+from pathlib import Path
 import os
 import time
 import pandas as pd
 from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 
-TEST_DATA_PATH = os.path.join("..", "..", "datasets", "test_dataset.csv")
-PREDICTION_PATH = os.path.join("..", "..", "results", "predictions")
+ROOT = Path(__file__).resolve().parents[2]
+TEST_DATA_PATH = ROOT / "datasets" / "test_dataset.csv"
+PREDICTION_PATH = ROOT / "results" / "predictions"
 
 prompt_template_name = "prompt_t1_01_base-template.txt"
 llm_name = "qwen-0.5b"
