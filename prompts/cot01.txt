@@ -1,0 +1,35 @@
+"Task: Judge the clarity of an answer to a journalist’s question.
+
+Labels (choose EXACTLY ONE; final line must be one of these strings):
+- Clear Reply
+- Ambivalent Reply
+- Clear Non-Reply
+
+Labels (choose exactly ONE):
+- Clear Reply: the answer directly supplies what was asked.
+- Ambivalent Reply: the answer references the topic but is indirect, vague, partial, or hedged.
+- Clear Non-Reply: the answer refuses, claims not to know, asks for clarification, or ignores the question.
+
+Think step by step (show your reasoning), then output the final label.
+
+Step-Back Reasoning:
+1) State in one sentence what information the QUESTION is requesting (who/what/when/where/how/why).
+2) Quote ≤20 words from the ANSWER that are most responsive.
+3) Evaluate with three tests:
+   - Directness: does the quote supply the requested info?
+   - Topicality: is it on-topic vs. generic or shifted?
+   - Non-reply cues: refusal / don't-know / clarification request present?
+4) Decide the single best label.
+
+Format your output exactly as:
+REASONING:
+- Target info: <one sentence>
+- Evidence: ""<verbatim span>""
+- Assessment: <1–2 short sentences>
+FINAL_LABEL: <Clear Reply | Ambivalent Reply | Clear Non-Reply>
+
+QUESTION:
+<Q>
+
+ANSWER:
+<A>"

@@ -1,0 +1,53 @@
+"You will judge the clarity of an answer to a journalist’s question.
+
+Labels (choose exactly ONE):
+- Clear Reply: the answer directly supplies what was asked.
+- Ambivalent Reply: the answer references the topic but is indirect, vague, partial, or hedged.
+- Clear Non-Reply: the answer refuses, claims not to know, asks for clarification, or ignores the question.
+Do not explain your reasoning. Return only one line with the label.
+
+### FEW-SHOT EXAMPLES
+[EX1 — Clear Reply]
+QUESTION: <FS1_Q>
+ANSWER: <FS1_A>
+LABEL: Clear Reply
+
+[EX2 — Clear Reply]
+QUESTION: <FS2_Q>
+ANSWER: <FS2_A>
+LABEL: Clear Reply
+
+[EX3 — Ambivalent Reply]
+QUESTION: <FS3_Q>
+ANSWER: <FS3_A>
+LABEL: Ambivalent Reply
+
+[EX4 — Ambivalent Reply]
+QUESTION: <FS4_Q>
+ANSWER: <FS4_A>
+LABEL: Ambivalent Reply
+
+[EX5 — Clear Non-Reply]
+QUESTION: <FS5_Q>
+ANSWER: <FS5_A>
+LABEL: Clear Non-Reply
+
+[EX6 — Clear Non-Reply]
+QUESTION: <FS6_Q>
+ANSWER: <FS6_A>
+LABEL: Clear Non-Reply
+
+### KNN SELECTION — do not output
+From the FEW-SHOT EXAMPLES above, internally compute semantic similarity between the INSTANCE TO CLASSIFY and each example
+(using intent match on who/what/when/where/why/how, topical terms, and refusal/ignorance/clarification cues such as “won’t comment”,
+“don’t know”, “can’t discuss”, “what do you mean”). Select top-k = 3 most similar examples; if ties, prefer label diversity across the k.
+Condition your prediction only on those selected k examples.
+
+### INSTANCE TO CLASSIFY
+QUESTION:
+<Q>
+
+ANSWER:
+<A>
+
+"
