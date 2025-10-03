@@ -17,7 +17,7 @@ Labels (choose exactly ONE):
 - Clear Non-Reply: the answer refuses, claims not to know, asks for clarification, or ignores the question.
 
 QUESTION:
-<Q>
+{question}
 
 ANSWER:
-<A>"
+{answer}"

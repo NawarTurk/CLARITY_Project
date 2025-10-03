@@ -29,7 +29,7 @@ REASONING:
 FINAL_LABEL: <Clear Reply | Ambivalent Reply | Clear Non-Reply>
 
 QUESTION:
-<Q>
+{question}
 
 ANSWER:
-<A>"
+{answer}"

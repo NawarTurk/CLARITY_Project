@@ -45,9 +45,7 @@ Condition your prediction only on those selected k examples.
 
 ### INSTANCE TO CLASSIFY
 QUESTION:
-<Q>
+{question}
 
 ANSWER:
-<A>
-
-"
+{answer}"
