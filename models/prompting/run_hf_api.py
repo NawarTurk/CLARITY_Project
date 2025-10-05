@@ -10,6 +10,7 @@ prompts_path    = os.path.join("..", "..", "prompts")
 # NOTE: you need to check if a certain model is deployed by any HF inference provider
 MODEL_REGISTRY = {
     # LLaMA family
+    "llama-3.3-70b-Instruct": "meta-llama/Llama-3.3-70B-Instruct",
     "llama-2-7b-chat":  "meta-llama/Llama-2-7b-chat-hf",
     "llama-2-13b-chat": "meta-llama/Llama-2-13b-chat-hf",
     "llama-2-70b-chat": "meta-llama/Llama-2-70b-chat-hf",
@@ -26,7 +27,8 @@ MODEL_REGISTRY = {
     "falcon-7b":  "tiiuae/falcon-7b-instruct",
 }
 
-llm_name       = "qwen-2.5-7b"  
+llm_name       = "llama-3.3-70b-Instruct"  
+provider       = "together"
 model_id       = MODEL_REGISTRY[llm_name]
 
 prompt_template = "01_t1_zs_re2.txt"  
@@ -36,7 +38,7 @@ out_path        = os.path.join(prediction_path, f"{pred_col}.csv")
 
 # ---- auth & client ----
 hf_token = os.environ["HF_TOKEN"]  # token with “Make calls to Inference Providers”
-client   = InferenceClient(model=model_id, token=hf_token)
+client   = InferenceClient(model=model_id, token=hf_token, provider=provider)
 
 # load system message from prompts/
 with open(os.path.join(prompts_path, prompt_template), "r", encoding="utf-8") as f:
