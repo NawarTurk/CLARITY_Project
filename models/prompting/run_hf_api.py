@@ -10,8 +10,11 @@ prompts_path    = os.path.join("..", "..", "prompts")
 # NOTE: you need to check if a certain model is deployed by any HF inference provider
 MODEL_REGISTRY = {
     # LLaMA family
-    "llama-3-405b-Intruct":    "meta-llama/Llama-3-405B-Instruct",  # need diff api call 
+    "llama-3.1-nemotron-253b": "nvidia/Llama-3_1-Nemotron-Ultra-253B-v1", # nebius
+    "llama-3.1-405b-Instruct": "meta-llama/Llama-3.1-405B-Instruct",  # nebius
+    "llama-3-405b-Intruct":    "meta-llama/Llama-3-405B-Instruct",  # ???
     "llama-3.3-70b-Instruct": "meta-llama/Llama-3.3-70B-Instruct",  # nebius 
+
     "llama-2-7b-chat":  "meta-llama/Llama-2-7b-chat-hf",
     "llama-2-13b-chat": "meta-llama/Llama-2-13b-chat-hf",
     "llama-2-70b-chat": "meta-llama/Llama-2-70b-chat-hf",
@@ -25,18 +28,22 @@ MODEL_REGISTRY = {
     "qwen-2.5-7b-Instruct":   "Qwen/Qwen2.5-14B-Instruct",
 
     # Other models
+    "mixtral-8x22b-Instruct":   "mistralai/Mixtral-8x22B-Instruct-v0.1", # nscale  
+
+    "gpt-oss-120b": "openai/gpt-oss-120b",  # returning empty replies  
+
     "mistral-7b": "mistralai/Mistral-7B-Instruct-v0.2",
     "phi-2.7b":   "microsoft/phi-2",
     "falcon-7b":  "tiiuae/falcon-7b-instruct",
 }
 
-llm_name       = "qwen3-coder-480b-Instruct"  
-provider       = "nebius"
+llm_name       = "gpt-oss-120b"  
+provider       = "nscale"
 model_id       = MODEL_REGISTRY[llm_name]
 prompt_template = "01_t1_zs_re2.txt"  
 
 prompt_name     = os.path.splitext(prompt_template)[0] 
-pred_col        = f"{llm_name}_{prompt_name}"          # e.g., "qwen-1.8b_01_t1_zs_re2"
+pred_col        = f"{llm_name}_{prompt_name}_{provider}"          # e.g., "qwen-1.8b_01_t1_zs_re2_nebius"
 out_path        = os.path.join(prediction_path, f"{pred_col}.csv")
 
 # ---- auth & client ----
@@ -72,11 +79,12 @@ for i, row in tqdm(test_df.iterrows(), total=len(test_df), desc="Processing"):
         p = classify(q, a)
         test_df.at[i, pred_col] = p
     except Exception:
-        time.sleep(2.0)
+        time.sleep(0.5)
         p = classify(q, a)
         test_df.at[i, pred_col] = p
 
-    tqdm.write(f"Question: {q}\nAnswer: {a}\nPrediction: {p}")
+    # tqdm.write(f"Question: {a}\nCorrect Label:{row['clarity_label']}\n'Prediction: {p}")
+    tqdm.write(f"Index:: {row['index']}\nCorrect Label:{row['clarity_label']}\nPrediction: {p}\n")
 
     if (i + 1) % 10 == 0:
         os.makedirs(prediction_path, exist_ok=True)
