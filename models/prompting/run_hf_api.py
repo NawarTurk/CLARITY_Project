@@ -10,16 +10,19 @@ prompts_path    = os.path.join("..", "..", "prompts")
 # NOTE: you need to check if a certain model is deployed by any HF inference provider
 MODEL_REGISTRY = {
     # LLaMA family
-    "llama-3.3-70b-Instruct": "meta-llama/Llama-3.3-70B-Instruct",
+    "llama-3-405b-Intruct":    "meta-llama/Llama-3-405B-Instruct",  # need diff api call 
+    "llama-3.3-70b-Instruct": "meta-llama/Llama-3.3-70B-Instruct",  # nebius 
     "llama-2-7b-chat":  "meta-llama/Llama-2-7b-chat-hf",
     "llama-2-13b-chat": "meta-llama/Llama-2-13b-chat-hf",
     "llama-2-70b-chat": "meta-llama/Llama-2-70b-chat-hf",
 
+
     # Qwen family
-    "qwen-0.5b": "Qwen/Qwen1.5-0.5B-Chat",
-    "qwen-1.8b": "Qwen/Qwen1.5-1.8B-Chat",
-    "qwen-7b":   "Qwen/Qwen1.5-7B-Chat",
-    "qwen-2.5-7b":   "Qwen/Qwen2.5-14B-Instruct",
+    "qwen3-coder-480b-Instruct": "Qwen/Qwen3-Coder-480B-A35B-Instruct",  # nebius  
+    "qwen-0.5b-Chat": "Qwen/Qwen1.5-0.5B-Chat",
+    "qwen-1.8b-Chat": "Qwen/Qwen1.5-1.8B-Chat",
+    "qwen-7b-Chat":   "Qwen/Qwen1.5-7B-Chat",
+    "qwen-2.5-7b-Instruct":   "Qwen/Qwen2.5-14B-Instruct",
 
     # Other models
     "mistral-7b": "mistralai/Mistral-7B-Instruct-v0.2",
@@ -27,11 +30,11 @@ MODEL_REGISTRY = {
     "falcon-7b":  "tiiuae/falcon-7b-instruct",
 }
 
-llm_name       = "llama-3.3-70b-Instruct"  
-provider       = "together"
+llm_name       = "qwen3-coder-480b-Instruct"  
+provider       = "nebius"
 model_id       = MODEL_REGISTRY[llm_name]
-
 prompt_template = "01_t1_zs_re2.txt"  
+
 prompt_name     = os.path.splitext(prompt_template)[0] 
 pred_col        = f"{llm_name}_{prompt_name}"          # e.g., "qwen-1.8b_01_t1_zs_re2"
 out_path        = os.path.join(prediction_path, f"{pred_col}.csv")
