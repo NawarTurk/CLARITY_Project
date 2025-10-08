@@ -10,25 +10,32 @@ import pandas as pd
 
 BASE_DIR = Path("results/predictions")
 DEFAULT_COLUMN = "prediction"
+CANONICAL_LABELS = {
+    "clear reply": "Clear Reply",
+    "ambivalent": "Ambivalent",
+    "clear non-reply": "Clear Non-Reply",
+    "invalid output": "Invalid Output",
+}
 EXPECTED_LABELS = [
-    "clear reply",
-    "ambivalent reply",
-    "clear non-reply",
+    "Clear Reply",
+    "Ambivalent",
+    "Clear Non-Reply",
 ]
 CHOICE_MAP = {
     "1": EXPECTED_LABELS[0],
     "2": EXPECTED_LABELS[1],
     "3": EXPECTED_LABELS[2],
-    "4": "invalid output",
+    "4": "Invalid Output",
 }
-
 ALIAS_MAP = {
     "clear answer": EXPECTED_LABELS[0],
     "clear-answer": EXPECTED_LABELS[0],
+    "ambivalent reply": EXPECTED_LABELS[1],
     "ambivalent answer": EXPECTED_LABELS[1],
     "ambivalent-answer": EXPECTED_LABELS[1],
     "clear non answer": EXPECTED_LABELS[2],
     "clear non-answer": EXPECTED_LABELS[2],
+    "clear non reply": EXPECTED_LABELS[2],
 }
 
 
@@ -39,7 +46,7 @@ def manual_select_label(raw_text: str, file_path: Path, row_identifier: str) -> 
     print(f"Row: {row_identifier}")
     print("Raw prediction:")
     print(raw_text if raw_text else "<empty>")
-    print("Options: 1) Clear Reply  2) Ambivalent Reply  3) Clear Non-Reply  4) Invalid Output")
+    print("Options: 1) Clear Reply  2) Ambivalent  3) Clear Non-Reply  4) Invalid Output")
 
     while True:
         try:
@@ -56,6 +63,7 @@ def manual_select_label(raw_text: str, file_path: Path, row_identifier: str) -> 
         print("Invalid selection. Please enter a number between 1 and 4.")
 
 
+
 def candidate_columns(csv_path: Path) -> list[str]:
     stem = csv_path.stem
     candidates = {DEFAULT_COLUMN, stem}
@@ -65,12 +73,15 @@ def candidate_columns(csv_path: Path) -> list[str]:
     return [col for col in candidates if col]
 
 
+
 def resolve_prediction_column(df: pd.DataFrame, csv_path: Path) -> str | None:
     for column in candidate_columns(csv_path):
         if column in df.columns:
             return column
 
-    normalized_labels = set(EXPECTED_LABELS + ["invalid output"])
+    normalized_labels = {label.lower() for label in EXPECTED_LABELS}
+    normalized_labels.update(ALIAS_MAP.keys())
+    normalized_labels.add("invalid output")
     for column in reversed(df.columns):
         series = df[column].dropna().astype(str).str.strip().str.lower()
         if series.empty:
@@ -82,12 +93,17 @@ def resolve_prediction_column(df: pd.DataFrame, csv_path: Path) -> str | None:
     return None
 
 
+
 def extract_label(raw_text: str) -> str | None:
     text_lower = raw_text.lower()
+
+    if "invalid output" in text_lower:
+        return CANONICAL_LABELS["invalid output"]
+
     matched_labels: list[str] = []
 
     for label in EXPECTED_LABELS:
-        if label in text_lower:
+        if label.lower() in text_lower:
             matched_labels.append(label)
 
     for alias, canonical in ALIAS_MAP.items():
@@ -98,6 +114,7 @@ def extract_label(raw_text: str) -> str | None:
         return matched_labels[0]
 
     return None
+
 
 
 def validate_file(csv_path: Path) -> None:
@@ -127,6 +144,7 @@ def validate_file(csv_path: Path) -> None:
     print(f"  Updated {csv_path}\n")
 
 
+
 def main() -> None:
     if not BASE_DIR.exists():
         print(f"No prediction files found. Expected directory: {BASE_DIR}")
@@ -147,4 +165,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
