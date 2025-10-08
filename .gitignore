@@ -7,3 +7,4 @@
 __pycache__/
 *.pyc
 *.pyo
+results/predictions/test_qwen-0.5b_01_T1_COT_SB.csv

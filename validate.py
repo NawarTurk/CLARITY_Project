@@ -110,6 +110,7 @@ def validate_file(csv_path: Path) -> None:
         print("  Skipped: unable to determine prediction column.")
         return
 
+    standard_column = f"standard_{column_name}"
     normalized_values: list[str] = []
 
     for idx, value in df[column_name].items():
@@ -121,7 +122,7 @@ def validate_file(csv_path: Path) -> None:
 
         normalized_values.append(label)
 
-    df[column_name] = normalized_values
+    df[standard_column] = normalized_values
     df.to_csv(csv_path, index=False)
     print(f"  Updated {csv_path}\n")
 
