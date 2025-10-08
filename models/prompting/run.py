@@ -11,8 +11,8 @@ from clarity import Config, run_predictions
 
 # Update these constants directly when you want to try a different setup.
 MODEL_NAME = "qwen-0.5b"
-PROMPT_TEMPLATE = "zero-shot01.txt"
-MAX_NEW_TOKENS = 100
+PROMPT_TEMPLATE = "01_T1_COT_SB.txt"
+MAX_NEW_TOKENS = 200
 DO_SAMPLE = False
 CHECKPOINT_INTERVAL = 10
 SLEEP_SECONDS = 0.0
