@@ -83,7 +83,7 @@ def generate_report(
         f"F1 Weighted: {f1_weighted:.3f}",
         f"Accuracy: {accuracy:.3f}",
         "Classification Report:",
-        clf_report.strip(),
+        clf_report,
     ]
 
     output_path.write_text("\n".join(report_lines), encoding="utf-8")

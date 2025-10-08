@@ -3,7 +3,7 @@ F1 Micro: 0.649
 F1 Weighted: 0.608
 Accuracy: 0.649
 Classification Report:
-precision    recall  f1-score   support
+                 precision    recall  f1-score   support
 
      Ambivalent      0.725     0.845     0.780       206
 Clear Non-Reply      0.286     0.696     0.405        23
