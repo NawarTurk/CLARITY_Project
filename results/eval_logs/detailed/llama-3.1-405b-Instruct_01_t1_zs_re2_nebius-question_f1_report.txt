@@ -1,0 +1,14 @@
+F1 Macro: 0.498
+F1 Micro: 0.672
+F1 Weighted: 0.612
+Accuracy: 0.672
+Classification Report:
+precision    recall  f1-score   support
+
+     Ambivalent      0.713     0.879     0.787       206
+Clear Non-Reply      0.391     0.783     0.522        23
+    Clear Reply      1.000     0.101     0.184        79
+
+       accuracy                          0.672       308
+      macro avg      0.701     0.588     0.498       308
+   weighted avg      0.762     0.672     0.612       308
