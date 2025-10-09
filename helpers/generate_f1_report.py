@@ -6,12 +6,27 @@ PREDICTION_DIR = Path(__file__).resolve().parents[1] / "results" / "predictions"
 TARGET_COLUMN = "clarity_label"
 MODEL_PREDICTION_COLUMN = "model_prediction"
 OUTPUT_DIR = Path(__file__).resolve().parents[1] / "results" / "eval_logs" / "detailed"
+GLOBAL_REPORT_DIR = Path(__file__).resolve().parents[1] / "results" / "eval_logs" / "global"
+
+def save_global_report(global_report):
+    """Save the global summary CSV."""
+    if not global_report:
+        print("⚠️ No data to save in global report.")
+        return
+
+    df_global = pd.DataFrame(global_report)
+    GLOBAL_REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    global_path = GLOBAL_REPORT_DIR / "global_f1_summary.csv"
+    df_global.to_csv(global_path, index=False)
+    print(f"\n✅ Global summary saved to {global_path}")
 
 def main():
     files = [f for f in PREDICTION_DIR.glob("*_VALIDATED.csv")]
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    GLOBAL_REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
     count = 0
+    global_report = []
     for f in files:
         df = pd.read_csv(f)
         y_true = df[TARGET_COLUMN].astype(str).str.strip().tolist()
@@ -22,6 +37,24 @@ def main():
         f1_micro = f1_score(y_true, y_pred, average="micro")
         f1_weighted = f1_score(y_true, y_pred, average="weighted")
         accuracy = accuracy_score(y_true, y_pred)
+
+        parts = f.stem.split('_')
+        model, prompt_id, task_id, prompt_technique, prompt_sub_technique, provider, question_columns, validated = parts
+        global_report.append({
+            'llm_model': model,
+            'prompt_id': prompt_id,
+            'prompt_technique': prompt_technique,
+            'prompt_sub_technique': prompt_sub_technique,
+            'provider': provider,
+            'question_columns': question_columns,
+            'validated': validated,
+            'task_id': task_id,
+            "file_name": f.stem,
+            "f1_macro": f1_macro,
+            "f1_micro": f1_micro,
+            "f1_weighted": f1_weighted,
+            "accuracy": accuracy,
+        })
 
         report = classification_report(
             y_true,
@@ -42,9 +75,11 @@ def main():
 
         out_path = OUTPUT_DIR / f"{f.stem}_f1Report.txt"
         out_path.write_text(report_lines)
-        print(f"Saved report to {out_path}")
+        print(f"Saved {f.stem} report")
         count += 1
-    print(f'{count} reports were created.')
+
+    print(f'✅ {count} reports were created.')
+    save_global_report(global_report)
 
 if __name__ == "__main__":
     main()
