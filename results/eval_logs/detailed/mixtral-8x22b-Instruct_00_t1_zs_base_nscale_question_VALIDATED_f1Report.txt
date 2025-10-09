@@ -1,0 +1,17 @@
+File: mixtral-8x22b-Instruct_00_t1_zs_base_nscale_question_VALIDATED.csv
+F1 Macro: 0.440
+F1 Micro: 0.627
+F1 Weighted: 0.589
+Accuracy: 0.627
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.698     0.830     0.758       206
+Clear Non-Reply      0.268     0.478     0.344        23
+    Clear Reply      0.500     0.139     0.218        79
+
+       accuracy                          0.627       308
+      macro avg      0.489     0.483     0.440       308
+   weighted avg      0.615     0.627     0.589       308
+
