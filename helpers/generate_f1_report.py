@@ -8,6 +8,26 @@ MODEL_PREDICTION_COLUMN = "model_prediction"
 OUTPUT_DIR = Path(__file__).resolve().parents[1] / "results" / "eval_logs" / "detailed"
 GLOBAL_REPORT_DIR = Path(__file__).resolve().parents[1] / "results" / "eval_logs" / "global"
 
+MODEL_FAMILY_INFO = {
+    # ---- LLaMA family ----
+    "llama-3.1-nemotron-253b": ("LLaMA", 253),
+    "llama-3.1-405b-Instruct": ("LLaMA", 405),
+    "llama-3.3-70b-Instruct": ("LLaMA", 70),
+
+    # ---- Qwen family ----
+    "qwen3-coder-480b-Instruct": ("Qwen", 480),
+    "qwen3-235b-instruct": ("Qwen", 235),
+    "qwen3-80b-instruct": ("Qwen", 80),
+    "qwen3-32b-instruct": ("Qwen", 32),
+
+    # ---- Mixtral family ----
+    "mixtral-8x22b-Instruct": ("Mixtral", 176),
+    "mixtral-8x7b-Instruct": ("Mixtral", 56),
+
+    # ---- GPT family ----
+    "gpt-5": ("GPT", None),  # parameter count undisclosed
+}
+
 def save_global_report(global_report):
     """Save the global summary CSV."""
     if not global_report:
@@ -31,7 +51,7 @@ def main():
         df = pd.read_csv(f)
         y_true = df[TARGET_COLUMN].astype(str).str.strip().tolist()
         y_pred = df[MODEL_PREDICTION_COLUMN].astype(str).str.strip().tolist()
-        label_order = sorted(set(y_true))
+        label_order = sorted(set(y_true) | set(y_pred)) 
 
         f1_macro = f1_score(y_true, y_pred, average="macro")
         f1_micro = f1_score(y_true, y_pred, average="micro")
@@ -40,8 +60,11 @@ def main():
 
         parts = f.stem.split('_')
         model, prompt_id, task_id, prompt_technique, prompt_sub_technique, provider, question_columns, validated = parts
+        model_family, param_count = MODEL_FAMILY_INFO[model]
         global_report.append({
             'llm_model': model,
+            'model_family': model_family,
+            'param_count': param_count,
             'prompt_id': prompt_id,
             'prompt_technique': prompt_technique,
             'prompt_sub_technique': prompt_sub_technique,

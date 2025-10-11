@@ -51,7 +51,7 @@ for llm_name, (model_id, provider) in MODEL_REGISTRY.items():
     def classify(question: str, answer: str) -> str:
         messages = [
             {"role": "system", "content": system_msg},
-            {"role": "user",   "content": f"Question: {question}\nAnswer: {answer}\nClarity Label:"},
+            {"role": "user",   "content": f"Question: {question}\nAnswer: {answer}\nLabel:"},
         ]
         out = client.chat.completions.create(
             messages=messages, temperature=0, max_tokens=10

@@ -65,7 +65,7 @@ def main():
                     elif "clear reply" in matches[0]:
                         label = "Clear Reply"
                 else:
-                    prediction = manual_select_label(prediction, f)
+                    label = manual_select_label(prediction, f)
             model_predictions.append(label)
 
         df["model_prediction"] = model_predictions
