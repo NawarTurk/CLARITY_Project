@@ -29,6 +29,7 @@ mixtral-8x22b-Instruct,Mixtral,176.0,00,zs,base,nscale,interview-question,VALIDA
 llama-3.3-70b-Instruct,LLaMA,70.0,00,zs,base,nebius,interview-question,VALIDATED,t1,llama-3.3-70b-Instruct_00_t1_zs_base_nebius_interview-question_VALIDATED,0.49633653587141957,0.6363636363636364,0.6238168606108806,0.6363636363636364
 mixtral-8x22b-Instruct,Mixtral,176.0,01,zs,re2,nscale,question,VALIDATED,t1,mixtral-8x22b-Instruct_01_t1_zs_re2_nscale_question_VALIDATED,0.4456831519793272,0.6688311688311688,0.6042881220959958,0.6688311688311688
 qwen3-32b-instruct,Qwen,32.0,00,zs,base,nebius,question,VALIDATED,t1,qwen3-32b-instruct_00_t1_zs_base_nebius_question_VALIDATED,0.47669035294034634,0.6590909090909091,0.6447500707399159,0.6590909090909091
+gpt-5,GPT,,01,zs,re2,openai,question,VALIDATED,t1,gpt-5_01_t1_zs_re2_openai_question_VALIDATED,0.6274864242982052,0.6818181818181818,0.6953918476062977,0.6818181818181818
 qwen3-80b-instruct,Qwen,80.0,00,zs,base,novita,question,VALIDATED,t1,qwen3-80b-instruct_00_t1_zs_base_novita_question_VALIDATED,0.4386404366243076,0.5584415584415584,0.5691936515341941,0.5584415584415584
 qwen3-coder-480b-Instruct,Qwen,480.0,01,zs,re2,nebius,question,VALIDATED,t1,qwen3-coder-480b-Instruct_01_t1_zs_re2_nebius_question_VALIDATED,0.5555199638049994,0.6623376623376623,0.6545247511226473,0.6623376623376623
 qwen3-32b-instruct,Qwen,32.0,01,zs,re2,nebius,interview-question,VALIDATED,t1,qwen3-32b-instruct_01_t1_zs_re2_nebius_interview-question_VALIDATED,0.5074142873523678,0.6655844155844156,0.6569453491125317,0.6655844155844156
@@ -37,3 +38,4 @@ llama-3.1-nemotron-253b,LLaMA,253.0,01,zs,re2,nebius,question,VALIDATED,t1,llama
 qwen3-235b-instruct,Qwen,235.0,01,zs,re2,nebius,question,VALIDATED,t1,qwen3-235b-instruct_01_t1_zs_re2_nebius_question_VALIDATED,0.5268874803357562,0.6688311688311688,0.6446064627267044,0.6688311688311688
 qwen3-coder-480b-Instruct,Qwen,480.0,01,zs,re2,nebius,interview-question,VALIDATED,t1,qwen3-coder-480b-Instruct_01_t1_zs_re2_nebius_interview-question_VALIDATED,0.56294677162311,0.6590909090909091,0.6524188811202507,0.6590909090909091
 qwen3-32b-instruct,Qwen,32.0,00,zs,base,nebius,interview-question,VALIDATED,t1,qwen3-32b-instruct_00_t1_zs_base_nebius_interview-question_VALIDATED,0.53423734145218,0.6688311688311688,0.6669086718743502,0.6688311688311688
+gpt-5,GPT,,00,zs,base,openai,question,VALIDATED,t1,gpt-5_00_t1_zs_base_openai_question_VALIDATED,0.5914566248058994,0.6493506493506493,0.6666018431680795,0.6493506493506493

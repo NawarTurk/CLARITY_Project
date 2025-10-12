@@ -8,7 +8,7 @@ PLOTS_DIR = Path(__file__).resolve().parents[1] / "results" /  "plots"
 USE_INTERVIEW_QUESTION = True  # read_me: add them to config
 USE_QUESTION = True  # read_me: add them to config
 
-def plot_combined_metrics():
+def main():
     """Plot F1 macro/micro/weighted + accuracy together for each grouping variable, with values on bars."""
     csv_path = GLOBAL_REPORT_DIR / "global_f1_summary.csv"
     if not csv_path.exists():
@@ -35,7 +35,7 @@ def plot_combined_metrics():
         raise ValueError("Both USE_INTERVIEW_QUESTION and USE_QUESTION are False. Nothing to plot.")
 
     # metrics = ["f1_macro", "f1_micro", "f1_weighted", "accuracy"]
-    metrics = ["f1_macro", "f1_weighted"]
+    metrics = ["f1_macro", "f1_weighted", "f1_micro"]
 
     group_columns = ["question_columns", "prompt_technique", "prompt_sub_technique", 
                      "prompt_id", 'llm_model', 'model_family', 'param_count']

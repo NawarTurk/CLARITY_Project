@@ -1,0 +1,17 @@
+File: gpt-5_01_t1_zs_re2_openai_question_VALIDATED.csv
+F1 Macro: 0.627
+F1 Micro: 0.682
+F1 Weighted: 0.695
+Accuracy: 0.682
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.822     0.675     0.741       206
+Clear Non-Reply      0.356     0.913     0.512        23
+    Clear Reply      0.625     0.633     0.629        79
+
+       accuracy                          0.682       308
+      macro avg      0.601     0.740     0.627       308
+   weighted avg      0.737     0.682     0.695       308
+

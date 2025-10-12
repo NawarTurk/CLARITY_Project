@@ -8,8 +8,8 @@ client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 test_data_path  = "../../datasets/test_dataset.csv"
 prediction_path = "../../results/predictions"
 prompts_path    = "../../prompts"
-prompt_template = "01_t1_zs_re2.txt"
-question_col    = "interview_question"
+prompt_template = "00_t1_zs_base.txt"
+question_col    = "question"
 
 # ---- model info ----
 llm_name  = "gpt-5"
