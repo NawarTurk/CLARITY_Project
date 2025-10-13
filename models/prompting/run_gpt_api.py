@@ -17,7 +17,7 @@ provider  = "openai"
 
 # ---- output file name (consistent with HF style) ----
 prompt_name = os.path.splitext(prompt_template)[0]
-pred_col = f"{llm_name}_{prompt_name}_{provider}_{'question' if question_col == 'question' else 'interview-question'}"
+pred_col = f"{llm_name}_{prompt_name}_{provider}"
 out_path = os.path.join(prediction_path, f"{pred_col}.csv")
 
 # ---- load prompt ----

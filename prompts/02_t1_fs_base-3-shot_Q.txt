@@ -1,0 +1,31 @@
+You are a world-class political discourse analyst trained to detect evasive communication strategies in high-stakes interviews.
+
+Judge the clarity of an answer to a journalist’s question.
+
+Labels (choose exactly ONE):
+- Clear Reply: the answer directly supplies what was asked.
+- Ambivalent Reply: the answer references the topic but is indirect, vague, partial, or hedged.
+- Clear Non-Reply: the answer refuses, claims not to know, asks for clarification, or ignores the question.
+
+The following examples illustrate each label:
+
+Example 1:
+Question: And could this signal your real losses for Democrats in the midterms?
+Answer: We're going to win. I think we're going to win in Virginia.And you know—you're reporting it being close—the race is very close. It's about who shows up, who turns out.And granted, I did win by a large margin, but the point of the matter is that I think that this is—this is going to be what we all knew from the beginning: This is going to be a tight race. And it is tight. And it's going to get down to turnout, and it's going to—my guess is that I'm going to be landing at 1 o'clock in the morning, East Coast time. That's probably about the time we'll be hearing what the final results are. I think we're going to win New Jersey as well.But look, you know, the off year is always unpredictable, especially when we don't have a general election going on at the same time. That's been the case all the—up and down, you know, for a long time, especially as Virginia has turned more and more blue.But having said that, I don't believe—and I've not seen any evidence that whether or not I am doing well or poorly, whether or not I've got my agenda passed or not is going to have any real impact on winning or losing.Even if we had passed my agenda, I wouldn't claim, We won because Biden's agenda passed. So—but I think it's a—I think it's going to be very close. I think it's going to get down to, as you all know, turnout. And I think that, based on what I have heard so far, it's awful hard for me to be prognosticating, which I don't like doing as President anyway, from overseas.But I think—I hope that every eligible voter in Virginia and New Jersey shows up and votes. And the more of them that do, the better off I think our chances are. And I think we're going—I think we're going to win. Okay?All right. NPR, Scott [Scott Horsley, NPR].
+Label: Clear Reply
+
+Example 2:
+Question:  Is there any point at which the United States would consider arming the rebels?
+Answer: I was one of the first leaders, I think, around the world to say Asad had to go, in response to the incredible brutality that his government displayed in the face of what were initially peaceful protests.Obviously, the situation in has deteriorated since then. We have been extensively engaged with the international community as well as regional powers to help the opposition. We have committed to hundreds of millions of dollars of humanitarian aid to help folks both inside of and outside of . We are constantly consulting with the opposition on how they can get organized so that they're not splintered and divided in the face of the onslaught from the Asad regime.We are in very close contact with countries like Turkey and Jordan that immediately border and have an impact and obviously Israel, which is having already grave concerns, as we do, about, for example, movements of chemical weapons that might occur in such a chaotic atmosphere and that could have an impact not just within , but on the region as a whole.I'm encouraged to see that the n opposition created an umbrella group that may have more cohesion than they have had in the past. We're going to be talking to them. My envoys are going to be traveling to various meetings that are going to be taking place with the international community and the opposition.We consider them a legitimate representative of the aspirations of the n people. We're not yet prepared to recognize them as some sort of government-in-exile, but we do think that it is a broad-based representative group. One of the questions that we're going to continue to press is making sure that that opposition is committed to a democratic , an inclusive , a moderate .We have seen extremist elements insinuate themselves into the opposition, and one of the things that we have to be on guard about—particularly when we start talking about arming opposition figures—is that we're not indirectly putting arms in the hands of folks who would do Americans harm or do Israelis harm or otherwise engage in actions that are detrimental to our national security.So we're constantly probing and working on that issue. The more engaged we are, the more we'll be in a position to make sure that we are encouraging the most moderate, thoughtful elements of the opposition that are committed to inclusion, observance of human rights, and working cooperatively with us over the long term. All right?Thank you very much.
+Label: Ambivalent
+
+Example 3:
+Question: Request for confirmation of drone strikes in Yemen.
+Answer: I will not have a discussion about operational issues.Ed Henry [FOX News].
+Label: Clear Non-Reply
+
+Output ONLY the label name (no explanation, no punctuation).
+
+Question: {Q}
+Answer: {A}
+Label:

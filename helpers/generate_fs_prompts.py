@@ -4,10 +4,11 @@ import textwrap
 
 PROMPT_DIR = Path(__file__).resolve().parents[1] / "prompts"
 TRAIN_DATASET_PATH = Path(__file__).resolve().parents[1] / "datasets" / "train_dataset.csv"
-Q_COLUMN = "interview_question"
+Q_COLUMN = "question"
 A_COLUMN = "interview_answer"
 LABEL_COLUMN = "clarity_label"
 SEED = 42
+
 
 def generate_random_balanced_examples(num):
     num_per_lable = num//3
@@ -25,8 +26,8 @@ def generate_prompt_body(examples_df):
     for i, row in examples_df.iterrows():
         prompt_body += (
         f"Example {i+1}:\n"
-        f"QUESTION: {row[Q_COLUMN]}\n"
-        f"ANSWER: {row[A_COLUMN]}\n"
+        f"Question: {row[Q_COLUMN]}\n"
+        f"Answer: {row[A_COLUMN]}\n"
         f"Label: {row[LABEL_COLUMN]}\n\n"
         )
     return prompt_body
@@ -39,7 +40,7 @@ def main():
     base_prompt = textwrap.dedent("""\
             You are a world-class political discourse analyst trained to detect evasive communication strategies in high-stakes interviews.
 
-            You will judge the clarity of an answer to a journalist’s question.
+            Judge the clarity of an answer to a journalist’s question.
 
             Labels (choose exactly ONE):
             - Clear Reply: the answer directly supplies what was asked.
@@ -52,17 +53,18 @@ def main():
     
     prompt_footer = (
         "Output ONLY the label name (no explanation, no punctuation).\n\n"
-        "QUESTION: {Q}\n"
-        "ANSWER: {A}\n\n"
-        "Label:"
+        "Question: {Q}\n"
+        "Answer: {A}\n"
+        "Label:\n"
         )
+    
     counter = 2
     for num in [3, 9, 27, 81]:
         examples_df = generate_random_balanced_examples(num)
         prompt_body = generate_prompt_body(examples_df)
         prompt = base_prompt + prompt_body +  prompt_footer
 
-        prompt_name = f"0{counter}_t1_fs_base-{num}-shot-intvQ.txt"
+        prompt_name = f"0{counter}_t1_fs_base-{num}-shot_Q.txt"
         out_path = PROMPT_DIR / prompt_name
 
         with open (out_path, 'w', encoding='utf-8') as f:

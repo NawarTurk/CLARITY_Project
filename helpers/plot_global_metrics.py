@@ -5,8 +5,6 @@ from pathlib import Path
 
 GLOBAL_REPORT_DIR = Path(__file__).resolve().parents[1] / "results" / "eval_logs" / "global"
 PLOTS_DIR = Path(__file__).resolve().parents[1] / "results" /  "plots"
-USE_INTERVIEW_QUESTION = True  # read_me: add them to config
-USE_QUESTION = False  # read_me: add them to config
 
 def main():
     """Plot F1 macro/micro/weighted + accuracy together for each grouping variable, with values on bars."""
@@ -18,21 +16,6 @@ def main():
     PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 
     df = pd.read_csv(csv_path)
-    
-
-    if USE_INTERVIEW_QUESTION and USE_QUESTION:
-        print("✅ Using all question types (interview-question + question).")
-    elif USE_INTERVIEW_QUESTION and not USE_QUESTION:
-        # Case 2: only interview-question
-        df = df[df["question_columns"] == "interview-question"]
-        print("🧭 Keeping only 'interview-question' rows.")
-    elif USE_QUESTION and not USE_INTERVIEW_QUESTION:
-        # Case 3: only question
-        df = df[df["question_columns"] == "question"]
-        print("🧭 Keeping only 'question' rows.")
-    else:
-        # Case 4: both False → invalid config
-        raise ValueError("Both USE_INTERVIEW_QUESTION and USE_QUESTION are False. Nothing to plot.")
 
     # metrics = ["f1_macro", "f1_micro", "f1_weighted", "accuracy"]
     metrics = ["f1_macro", "f1_weighted"]
@@ -133,4 +116,4 @@ def main():
                 title_suffix="Sorted by F1 Weighted")
     
 if __name__ == "__main__":
-    plot_combined_metrics()
+    main()

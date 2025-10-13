@@ -1,0 +1,17 @@
+File: mixtral-8x7b-Instruct_00_t1_zs_base_Q_together_VALIDATED.csv
+F1 Macro: 0.420
+F1 Micro: 0.679
+F1 Weighted: 0.611
+Accuracy: 0.679
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.700     0.942     0.803       206
+Clear Non-Reply      0.263     0.217     0.238        23
+    Clear Reply      0.833     0.127     0.220        79
+
+       accuracy                          0.679       308
+      macro avg      0.599     0.429     0.420       308
+   weighted avg      0.702     0.679     0.611       308
+

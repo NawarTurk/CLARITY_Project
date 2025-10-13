@@ -59,7 +59,7 @@ def main():
         accuracy = accuracy_score(y_true, y_pred)
 
         parts = f.stem.split('_')
-        model, prompt_id, task_id, prompt_technique, prompt_sub_technique, provider, question_columns, validated = parts
+        model, prompt_id, task_id, prompt_technique, prompt_sub_technique, question_columns, provider, validated = parts
         model_family, param_count = MODEL_FAMILY_INFO[model]
         global_report.append({
             'llm_model': model,
@@ -68,8 +68,8 @@ def main():
             'prompt_id': prompt_id,
             'prompt_technique': prompt_technique,
             'prompt_sub_technique': prompt_sub_technique,
-            'provider': provider,
             'question_columns': question_columns,
+            'provider': provider,
             'validated': validated,
             'task_id': task_id,
             "file_name": f.stem,

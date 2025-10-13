@@ -32,13 +32,13 @@ MODEL_REGISTRY = {
 }
 
 # ---- configuration ----
-prompt_template = "00_t1_zs_base.txt" 
-question_col =  "interview_question"  # options are: "question" "interview_question"
+prompt_template = "02_t1_fs_base-3-shot_Q.txt" 
+question_col =  "question"  
 hf_token = os.environ["HF_TOKEN"]  # token with “Make calls to Inference Providers”
 
 for llm_name, (model_id, provider) in MODEL_REGISTRY.items():
     prompt_name = os.path.splitext(prompt_template)[0] 
-    pred_col = f"{llm_name}_{prompt_name}_{provider}_{'question' if question_col == 'question' else 'interview-question'}"          # e.g., "qwen-1.8b_01_t1_zs_re2_nebius"
+    pred_col = f"{llm_name}_{prompt_name}_{provider}"          # e.g., "qwen-1.8b_01_t1_zs_re2_nebius"
     out_path = os.path.join(prediction_path, f"{pred_col}.csv")
 
     # client
@@ -63,6 +63,7 @@ for llm_name, (model_id, provider) in MODEL_REGISTRY.items():
     if pred_col not in test_df.columns:
         test_df[pred_col] = None
 
+    print(f'Running prediction using model: {llm_name}')
     for i, row in tqdm(test_df.iterrows(), total=len(test_df), desc="Processing"):
         if pd.notna(row[pred_col]):    
             continue  
@@ -83,7 +84,7 @@ for llm_name, (model_id, provider) in MODEL_REGISTRY.items():
         if (i + 1) % 10 == 0:
             os.makedirs(prediction_path, exist_ok=True)
             test_df.to_csv(out_path, index=False)
-            time.sleep(1.0)  
+            time.sleep(0.2)  
 
     os.makedirs(prediction_path, exist_ok=True)
     test_df.to_csv(out_path, index=False)
