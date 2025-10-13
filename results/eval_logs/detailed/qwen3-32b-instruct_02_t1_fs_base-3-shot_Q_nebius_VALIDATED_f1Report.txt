@@ -1,0 +1,17 @@
+File: qwen3-32b-instruct_02_t1_fs_base-3-shot_Q_nebius_VALIDATED.csv
+F1 Macro: 0.472
+F1 Micro: 0.675
+F1 Weighted: 0.636
+Accuracy: 0.675
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.716     0.893     0.795       206
+Clear Non-Reply      0.304     0.304     0.304        23
+    Clear Reply      0.607     0.215     0.318        79
+
+       accuracy                          0.675       308
+      macro avg      0.542     0.471     0.472       308
+   weighted avg      0.657     0.675     0.636       308
+

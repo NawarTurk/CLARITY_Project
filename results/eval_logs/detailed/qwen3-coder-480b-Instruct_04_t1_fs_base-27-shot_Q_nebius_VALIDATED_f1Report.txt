@@ -1,0 +1,17 @@
+File: qwen3-coder-480b-Instruct_04_t1_fs_base-27-shot_Q_nebius_VALIDATED.csv
+F1 Macro: 0.563
+F1 Micro: 0.607
+F1 Weighted: 0.620
+Accuracy: 0.607
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.767     0.607     0.678       206
+Clear Non-Reply      0.500     0.522     0.511        23
+    Clear Reply      0.413     0.633     0.500        79
+
+       accuracy                          0.607       308
+      macro avg      0.560     0.587     0.563       308
+   weighted avg      0.656     0.607     0.620       308
+
