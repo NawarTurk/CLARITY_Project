@@ -6,7 +6,7 @@ from pathlib import Path
 GLOBAL_REPORT_DIR = Path(__file__).resolve().parents[1] / "results" / "eval_logs" / "global"
 PLOTS_DIR = Path(__file__).resolve().parents[1] / "results" /  "plots"
 USE_INTERVIEW_QUESTION = True  # read_me: add them to config
-USE_QUESTION = True  # read_me: add them to config
+USE_QUESTION = False  # read_me: add them to config
 
 def main():
     """Plot F1 macro/micro/weighted + accuracy together for each grouping variable, with values on bars."""
@@ -35,7 +35,7 @@ def main():
         raise ValueError("Both USE_INTERVIEW_QUESTION and USE_QUESTION are False. Nothing to plot.")
 
     # metrics = ["f1_macro", "f1_micro", "f1_weighted", "accuracy"]
-    metrics = ["f1_macro", "f1_weighted", "f1_micro"]
+    metrics = ["f1_macro", "f1_weighted"]
 
     group_columns = ["question_columns", "prompt_technique", "prompt_sub_technique", 
                      "prompt_id", 'llm_model', 'model_family', 'param_count']
