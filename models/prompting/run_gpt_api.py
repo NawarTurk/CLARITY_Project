@@ -8,7 +8,7 @@ client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 test_data_path  = "../../datasets/test_dataset.csv"
 prediction_path = "../../results/predictions"
 prompts_path    = "../../prompts"
-prompt_template = "00_t1_zs_base.txt"
+prompt_template = "04_t1_fs_base-27-shot_Q.txt"
 question_col    = "question"
 
 # ---- model info ----

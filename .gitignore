@@ -7,3 +7,6 @@
 __pycache__/
 *.pyc
 *.pyo
+
+temp_scripts/
+del/

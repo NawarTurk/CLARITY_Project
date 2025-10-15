@@ -10,7 +10,7 @@ Labels (choose exactly ONE):
 Output ONLY the label name (no explanation, no punctuation).
 
 Read the question again:
-You will judge the clarity of an answer to a journalist’s question.
+Judge the clarity of an answer to a journalist’s question.
 
 Labels (choose exactly ONE):
 - Clear Reply: the answer directly supplies what was asked.
