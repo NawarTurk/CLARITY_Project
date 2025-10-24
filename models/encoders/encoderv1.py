@@ -1,4 +1,10 @@
 import inspect
+
+# Discourse-style finetuning & evaluation (no-freezing variant)
+# - Loads train CSV, builds train/validation split
+# - Tokenizes (question, interview_answer) as a pair
+# - Trains with epoch-based evaluation + early stopping
+# - Saves validation and test reports, plus a test predictions CSV with per-class probabilities
 import os
 import random
 from typing import Dict, Tuple
@@ -19,31 +25,31 @@ from transformers import (
 )
 
 # -----------------------------------------------------------------------------
-# Configuration
+# 1) Setup
 # -----------------------------------------------------------------------------
 SEED = 42
 MODEL_NAME = "distilbert-base-uncased"
+
 TRAIN_CSV_PATH = os.path.join("datasets", "train_dataset.csv")
 TEST_CSV_PATH = os.path.join("datasets", "test_dataset.csv")
+
 OUTPUT_DIR = os.path.join("results", "models", "distilbert-base-uncased")
 FINAL_MODEL_DIR = os.path.join("finetuned-models", "distilbert-base-uncased")
 PREDICTIONS_DIR = os.path.join("results", "predictions")
+
 TARGET_COLUMN = "clarity_label"
-QUESTION_COLUMN = "question"
-ANSWER_COLUMN = "interview_answer"
+ARG1_KEY = "question"
+ARG2_KEY = "interview_answer"
 
 NUM_EPOCHS = 5
 BATCH_SIZE = 16
 LEARNING_RATE = 5e-5
 MAX_LENGTH = 256
-VAL_SIZE = 0.1
+VAL_SIZE = 0.10
 
 
-# -----------------------------------------------------------------------------
-# Utilities
-# -----------------------------------------------------------------------------
-def set_global_seed(seed: int) -> None:
-    """Set all relevant random seeds for reproducibility."""
+def set_global_seed(seed: int = SEED) -> None:
+    """Match the PDF’s seed setup style for reproducibility."""
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -55,260 +61,231 @@ def set_global_seed(seed: int) -> None:
     torch.backends.cudnn.benchmark = False
     if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
-    print(f"[Info] Global seed set to {seed}")
+    print(f"[Info] Global seed set: {seed}")
+
+set_global_seed(SEED)  # :contentReference[oaicite:2]{index=2}
 
 
-set_global_seed(SEED)
+# -----------------------------------------------------------------------------
+# 2) Helper: metrics (PDF-style)
+# -----------------------------------------------------------------------------
+def compute_metrics(eval_pred):
+    logits, labels = eval_pred
+    preds = np.argmax(logits, axis=-1)
+    acc = accuracy_score(labels, preds)
+    f1_macro = f1_score(labels, preds, average="macro")
+    f1_micro = f1_score(labels, preds, average="micro")
+    return {"accuracy": acc, "f1_macro": f1_macro, "f1_micro": f1_micro}  # :contentReference[oaicite:3]{index=3}
 
 
-def load_and_prepare_dataframe() -> Tuple[pd.DataFrame, Dict[str, int], Dict[int, str]]:
-    """Load the training CSV, keep relevant columns, and encode labels."""
-    df = pd.read_csv(TRAIN_CSV_PATH)
+# -----------------------------------------------------------------------------
+# 3) Core training function, styled like the PDF’s `train(...)` (no freezing)
+# -----------------------------------------------------------------------------
+def train_model(
+    model_name: str,
+    train_df: pd.DataFrame,
+    dev_df: pd.DataFrame,
+    arg1_key: str,
+    arg2_key: str,
+    label_col: str,
+):
+    """
+    Finetunes a transformer for sequence classification using (Arg1, Arg2) pair tokenization,
+    evaluates each epoch with early stopping, and returns (trainer, id2label, label2id, tokenizer).
 
-    df = df.dropna(subset=[QUESTION_COLUMN, ANSWER_COLUMN, TARGET_COLUMN]).copy()
-    df["text"] = df.apply(
-        lambda row: f"Interview_question : {row[QUESTION_COLUMN]}\nAnswer: {row[ANSWER_COLUMN]}",
-        axis=1,
-    )
+    This mirrors the PDF’s structure (pair tokenization, Trainer, metrics) while skipping any
+    layer freezing logic. :contentReference[oaicite:4]{index=4}
+    """
+    # Encode labels (aligns train/dev to same mapping)
+    unique_labels = sorted(train_df[label_col].dropna().unique())
+    label2id: Dict[str, int] = {lab: i for i, lab in enumerate(unique_labels)}
+    id2label: Dict[int, str] = {i: lab for lab, i in label2id.items()}
 
-    unique_labels = sorted(df[TARGET_COLUMN].unique())
-    label2id = {label: idx for idx, label in enumerate(unique_labels)}
-    id2label = {idx: label for label, idx in label2id.items()}
-    df["label"] = df[TARGET_COLUMN].map(label2id)
+    train_df = train_df.dropna(subset=[arg1_key, arg2_key, label_col]).copy()
+    dev_df = dev_df.dropna(subset=[arg1_key, arg2_key, label_col]).copy()
+    train_df["label"] = train_df[label_col].map(label2id)
+    dev_df["label"] = dev_df[label_col].map(label2id)
 
-    return df[["text", "label"]], label2id, id2label
-
-
-def prepare_datasets(df: pd.DataFrame) -> Tuple[Dataset, Dataset]:
-    """Split the dataframe into train/validation subsets and convert to Hugging Face Datasets."""
-    train_df, eval_df = train_test_split(
-        df,
-        test_size=VAL_SIZE,
-        stratify=df["label"],
-        random_state=SEED,
-    )
-
-    train_ds = Dataset.from_pandas(train_df.reset_index(drop=True), preserve_index=False)
-    eval_ds = Dataset.from_pandas(eval_df.reset_index(drop=True), preserve_index=False)
-    return train_ds, eval_ds
-
-
-def tokenize_datasets(train_ds: Dataset, eval_ds: Dataset, tokenizer: AutoTokenizer) -> Tuple[Dataset, Dataset]:
-    """Tokenize both datasets with the provided tokenizer."""
+    # Tokenizer & tokenization (pair inputs, like PDF) :contentReference[oaicite:5]{index=5}
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
 
     def tokenize(batch):
         return tokenizer(
-            batch["text"],
+            batch[arg1_key],
+            batch[arg2_key],
             truncation=True,
-            padding="max_length",
+            padding=True,
             max_length=MAX_LENGTH,
         )
 
-    train_ds = train_ds.map(tokenize, batched=True)
-    eval_ds = eval_ds.map(tokenize, batched=True)
+    train_ds = Dataset.from_pandas(train_df, preserve_index=False).map(tokenize, batched=True)
+    dev_ds = Dataset.from_pandas(dev_df, preserve_index=False).map(tokenize, batched=True)
 
-    columns_to_return = ["input_ids", "attention_mask", "label"]
-    train_ds.set_format(type="torch", columns=columns_to_return)
-    eval_ds.set_format(type="torch", columns=columns_to_return)
-    return train_ds, eval_ds
-
-
-def compute_metrics(eval_pred):
-    """Compute accuracy and F1 scores for Trainer."""
-    logits, labels = eval_pred
-    predictions = np.argmax(logits, axis=-1)
-    accuracy = accuracy_score(labels, predictions)
-    f1_macro = f1_score(labels, predictions, average="macro")
-    f1_micro = f1_score(labels, predictions, average="micro")
-    return {"accuracy": accuracy, "f1_macro": f1_macro, "f1_micro": f1_micro}
-
-
-def build_training_arguments(common_args: Dict) -> Tuple[TrainingArguments, bool]:
-    """Create TrainingArguments compatible with the installed transformers version."""
-    signature_params = inspect.signature(TrainingArguments.__init__).parameters
-    args = dict(common_args)
-
-    epoch_params = {
-        "evaluation_strategy": "epoch",
-        "save_strategy": "epoch",
-        "load_best_model_at_end": True,
-        "metric_for_best_model": "eval_accuracy",
-        "greater_is_better": True,
-        "logging_strategy": "epoch",
-        "report_to": "none",
-    }
-
-    supports_epoch_strategies = all(key in signature_params for key in ("evaluation_strategy", "save_strategy"))
-    if supports_epoch_strategies:
-        for key, value in epoch_params.items():
-            if key in signature_params:
-                args[key] = value
-        return TrainingArguments(**args), True
-
-    step_params = {
-        "eval_steps": 100,
-        "save_steps": 100,
-        "logging_steps": 100,
-    }
-    for key, value in step_params.items():
-        if key in signature_params:
-            args[key] = value
-
-    return TrainingArguments(**args), False
-
-def load_test_dataframe(label2id: Dict[str, int]) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Load the test CSV, build the text column, and map labels with the training label2id."""
-    if not os.path.exists(TEST_CSV_PATH):
-        raise FileNotFoundError(f"Test CSV not found at {TEST_CSV_PATH}")
-
-    df = pd.read_csv(TEST_CSV_PATH)
-    df = df.dropna(subset=[QUESTION_COLUMN, ANSWER_COLUMN, TARGET_COLUMN]).copy()
-
-    df["text"] = df.apply(
-        lambda row: f"Interview_question : {row[QUESTION_COLUMN]}\nAnswer: {row[ANSWER_COLUMN]}",
-        axis=1,
-    )
-
-    df_proc = df[["text"]].copy()
-    df_proc["label"] = df[TARGET_COLUMN].map(label2id)
-
-    return df_proc, df
-
-
-
-# -----------------------------------------------------------------------------
-# Training pipeline
-# -----------------------------------------------------------------------------
-def run_training() -> None:
-    df, label2id, id2label = load_and_prepare_dataframe()
-    train_ds, eval_ds = prepare_datasets(df)
-
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    train_ds, eval_ds = tokenize_datasets(train_ds, eval_ds, tokenizer)
-
+    # Model
     model = AutoModelForSequenceClassification.from_pretrained(
-        MODEL_NAME,
-        num_labels=len(label2id),
+        model_name,
+        num_labels=len(unique_labels),
         id2label=id2label,
         label2id=label2id,
     )
 
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-    common_args = dict(  # shared args across transformer versions
+    # TrainingArguments (epoch strategies, early stopping compatible)
+    training_kwargs = dict(
         output_dir=OUTPUT_DIR,
+        evaluation_strategy="epoch",
+        save_strategy="epoch",
+        logging_strategy="epoch",
+        report_to="none",
+        load_best_model_at_end=True,
+        metric_for_best_model="eval_accuracy",
+        greater_is_better=True,
         num_train_epochs=NUM_EPOCHS,
+        learning_rate=LEARNING_RATE,
         per_device_train_batch_size=BATCH_SIZE,
         per_device_eval_batch_size=BATCH_SIZE,
-        learning_rate=LEARNING_RATE,
         weight_decay=0.01,
         seed=SEED,
         data_seed=SEED,
         fp16=torch.cuda.is_available(),
+        save_total_limit=3,
     )
 
-    training_args, epoch_strategies_supported = build_training_arguments(common_args)
+    ta_params = inspect.signature(TrainingArguments.__init__).parameters
+    # Map evaluation_strategy → eval_strategy if the new name is required
+    if "evaluation_strategy" not in ta_params and "eval_strategy" in ta_params:
+        training_kwargs["eval_strategy"] = training_kwargs.pop("evaluation_strategy")
+    # Drop any kwargs that are unsupported by this transformers build
+    filtered_kwargs = {k: v for k, v in training_kwargs.items() if k in ta_params}
 
-    callbacks = [EarlyStoppingCallback(early_stopping_patience=3)] if epoch_strategies_supported else None
+    training_args = TrainingArguments(**filtered_kwargs)
+
+    callbacks = [EarlyStoppingCallback(early_stopping_patience=3)]
 
     trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=train_ds,
-        eval_dataset=eval_ds,
-        tokenizer=tokenizer,
+        eval_dataset=dev_ds,
+        processing_class=tokenizer,  # mirrors PDF usage
         compute_metrics=compute_metrics,
         callbacks=callbacks,
     )
 
-    print("[Info] Starting training...")
+    print("[Info] Starting training…")
     trainer.train()
 
-    print("[Info] Evaluating on validation split...")
-    metrics = trainer.evaluate(eval_dataset=eval_ds)
-    for name, value in metrics.items():
-        print(f"  {name}: {value:.4f}" if isinstance(value, float) else f"  {name}: {value}")
+    print("[Info] Evaluating on validation split…")
+    eval_metrics = trainer.evaluate(eval_dataset=dev_ds)
+    for k, v in eval_metrics.items():
+        print(f"  {k}: {v:.4f}" if isinstance(v, float) else f"  {k}: {v}")
 
-    predictions = trainer.predict(eval_ds)
-    pred_labels = np.argmax(predictions.predictions, axis=-1)
-    true_labels = predictions.label_ids
-
+    # Detailed val report
+    val_pred = trainer.predict(dev_ds)
+    val_y_true = dev_df["label"].to_numpy()
+    val_y_pred = np.argmax(val_pred.predictions, axis=-1)
     target_names = [id2label[i] for i in sorted(id2label)]
-    report = classification_report(true_labels, pred_labels, target_names=target_names, digits=4, zero_division=0)
+    val_report = classification_report(val_y_true, val_y_pred, target_names=target_names, digits=4, zero_division=0)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    with open(os.path.join(OUTPUT_DIR, "validation_report.txt"), "w", encoding="utf-8") as f:
+        f.write(val_report)
     print("\n[Info] Validation classification report:")
-    print(report)
+    print(val_report)
 
-    report_path = os.path.join(OUTPUT_DIR, "validation_report.txt")
-    with open(report_path, "w", encoding="utf-8") as f:
-        f.write(report)
-    print(f"[Info] Saved classification report to {report_path}")
-
+    # Save final model
     os.makedirs(FINAL_MODEL_DIR, exist_ok=True)
     trainer.save_model(FINAL_MODEL_DIR)
     tokenizer.save_pretrained(FINAL_MODEL_DIR)
-    print(f"[Info] Saved fine-tuned model and tokenizer to {FINAL_MODEL_DIR}")
+    print(f"[Info] Saved fine-tuned model & tokenizer to {FINAL_MODEL_DIR}")
 
-    print(f"[Info] Best model checkpoints remain under {OUTPUT_DIR}")
+    return trainer, id2label, label2id, tokenizer
 
-    # ----- Test predictions -----
-    os.makedirs(PREDICTIONS_DIR, exist_ok=True)
 
-    test_proc_df, test_raw_df = load_test_dataframe(label2id)
+# -----------------------------------------------------------------------------
+# 4) Pipeline: load CSVs, split, train, then run TEST predictions + reports
+# -----------------------------------------------------------------------------
+def main():
+    # Load full training CSV and split into train/dev (stratified)
+    full_df = pd.read_csv(TRAIN_CSV_PATH)
+    full_df = full_df.dropna(subset=[ARG1_KEY, ARG2_KEY, TARGET_COLUMN]).copy()
 
-    test_ds = Dataset.from_pandas(test_proc_df.reset_index(drop=True), preserve_index=False)
+    train_df, dev_df = train_test_split(
+        full_df,
+        test_size=VAL_SIZE,
+        stratify=full_df[TARGET_COLUMN],
+        random_state=SEED,
+    )
+    train_df = train_df.reset_index(drop=True)
+    dev_df = dev_df.reset_index(drop=True)
 
-    def tok_test(batch):
-        return tokenizer(
-            batch["text"],
+    trainer, id2label, label2id, tokenizer = train_model(
+        model_name=MODEL_NAME,
+        train_df=train_df,
+        dev_df=dev_df,
+        arg1_key=ARG1_KEY,
+        arg2_key=ARG2_KEY,
+        label_col=TARGET_COLUMN,
+    )
+
+    # --- Test predictions (probabilities + CSV) ---
+    if not os.path.exists(TEST_CSV_PATH):
+        print(f"[Warn] Test CSV not found at {TEST_CSV_PATH}. Skipping test predictions.")
+        return
+
+    test_df = pd.read_csv(TEST_CSV_PATH).dropna(subset=[ARG1_KEY, ARG2_KEY, TARGET_COLUMN]).copy()
+    test_proc = test_df[[ARG1_KEY, ARG2_KEY]].copy()
+    test_proc["label"] = test_df[TARGET_COLUMN].map(label2id)
+
+    test_ds = Dataset.from_pandas(test_proc, preserve_index=False).map(
+        lambda batch: tokenizer(
+            batch[ARG1_KEY],
+            batch[ARG2_KEY],
             truncation=True,
-            padding="max_length",
+            padding=True,
             max_length=MAX_LENGTH,
-        )
+        ),
+        batched=True,
+    )
 
-    test_ds = test_ds.map(tok_test, batched=True)
-    test_ds.set_format(type="torch", columns=["input_ids", "attention_mask", "label"])
-
-    # Predictions (no training!)
-    test_predictions = trainer.predict(test_ds)
-    probs = torch.softmax(torch.tensor(test_predictions.predictions), dim=-1).numpy()
-    pred_ids = probs.argmax(axis=-1)
-    pred_labels = [id2label[int(i)] for i in pred_ids]
-
-    # Build a per-row predictions CSV
-    pred_df = pd.DataFrame({
-        "question": test_raw_df[QUESTION_COLUMN].values,
-        "answer":   test_raw_df[ANSWER_COLUMN].values,
-        "pred_label": pred_labels,
-    })
-    for i, lab in sorted(id2label.items()):
-        pred_df[f"prob_{lab}"] = probs[:, i]
-
-    true_labels = test_raw_df[TARGET_COLUMN].astype(str).values
-    pred_df["true_label"] = true_labels
-
-    # Compute metrics on the test set
+    # Evaluate (for metrics) and Predict (for raw logits → probs)
+    print("[Info] Evaluating on test set…")
     test_metrics = trainer.evaluate(test_ds, metric_key_prefix="test")
-    print("\n[Info] Test metrics:")
     for k, v in test_metrics.items():
         print(f"  {k}: {v:.4f}" if isinstance(v, float) else f"  {k}: {v}")
 
-    y_true_ids = test_proc_df["label"].to_numpy()
+    print("[Info] Generating test predictions…")
+    test_pred = trainer.predict(test_ds)
+    probs = torch.softmax(torch.tensor(test_pred.predictions), dim=-1).numpy()
+    pred_ids = probs.argmax(axis=-1)
+    pred_labels = [id2label[int(i)] for i in pred_ids]
+
+    # Build predictions DataFrame
+    os.makedirs(PREDICTIONS_DIR, exist_ok=True)
+    out_df = pd.DataFrame(
+        {
+            "question": test_df[ARG1_KEY].values,
+            "answer": test_df[ARG2_KEY].values,
+            "pred_label": pred_labels,
+            "true_label": test_df[TARGET_COLUMN].astype(str).values,
+        }
+    )
+    for i, lab in sorted(id2label.items()):
+        out_df[f"prob_{lab}"] = probs[:, i]
+
+    # Detailed test report (sklearn)
+    y_true_ids = test_proc["label"].to_numpy()
     y_pred_ids = pred_ids
     target_names = [id2label[i] for i in sorted(id2label)]
-    test_report = classification_report(
-        y_true_ids, y_pred_ids, target_names=target_names, digits=4, zero_division=0
-    )
-    print("\n[Info] Test classification report:")
-    print(test_report)
+    test_report = classification_report(y_true_ids, y_pred_ids, target_names=target_names, digits=4, zero_division=0)
     with open(os.path.join(OUTPUT_DIR, "test_report.txt"), "w", encoding="utf-8") as f:
         f.write(test_report)
+    print("\n[Info] Test classification report:")
+    print(test_report)
 
     # Save predictions CSV
-    test_pred_path = os.path.join(PREDICTIONS_DIR, f"{MODEL_NAME}_test_predictions.csv")
-    pred_df.to_csv(test_pred_path, index=False)
-    print(f"[Info] Saved test predictions to {test_pred_path}")
-
+    test_csv_path = os.path.join(PREDICTIONS_DIR, f"{MODEL_NAME}_test_predictions.csv")
+    out_df.to_csv(test_csv_path, index=False)
+    print(f"[Info] Saved test predictions to {test_csv_path}")
 
 
 if __name__ == "__main__":
-    run_training()
+    main()
