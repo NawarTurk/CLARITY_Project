@@ -14,7 +14,7 @@ import pandas as pd
 import torch
 from datasets import Dataset
 from sklearn.metrics import accuracy_score, f1_score, classification_report
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, confusion_matrix
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
@@ -226,6 +226,38 @@ def main():
         label_col=TARGET_COLUMN,
     )
 
+    # ================================
+    # DEV/VALIDATION CONFUSION MATRIX
+    # ================================
+    # Rebuild a dev dataset (pair-tokenized) and compute confusion matrix
+    dev_proc = dev_df[[ARG1_KEY, ARG2_KEY]].copy()
+    dev_proc["label"] = dev_df[TARGET_COLUMN].map(label2id)
+
+    dev_ds = Dataset.from_pandas(dev_proc, preserve_index=False).map(
+        lambda batch: tokenizer(
+            batch[ARG1_KEY],
+            batch[ARG2_KEY],
+            truncation=True,
+            padding=True,
+            max_length=MAX_LENGTH,
+        ),
+        batched=True,
+    )
+
+    dev_pred = trainer.predict(dev_ds)
+    dev_probs = torch.softmax(torch.tensor(dev_pred.predictions), dim=-1).numpy()
+    dev_pred_ids = dev_probs.argmax(axis=-1)
+
+    target_names = [id2label[i] for i in sorted(id2label)]
+    dev_true_ids = dev_proc["label"].to_numpy()
+
+    dev_cm = confusion_matrix(dev_true_ids, dev_pred_ids, labels=list(range(len(id2label))))
+    dev_cm_df = pd.DataFrame(dev_cm, index=target_names, columns=target_names)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    dev_cm_path = os.path.join(OUTPUT_DIR, "confusion_matrix_val.csv")
+    dev_cm_df.to_csv(dev_cm_path)
+    print(f"[Info] Saved validation confusion matrix to {dev_cm_path}")
+
     # --- Test predictions (probabilities + CSV) ---
     if not os.path.exists(TEST_CSV_PATH):
         print(f"[Warn] Test CSV not found at {TEST_CSV_PATH}. Skipping test predictions.")
@@ -264,7 +296,7 @@ def main():
         {
             "question": test_df[ARG1_KEY].values,
             "answer": test_df[ARG2_KEY].values,
-            "pred_label": pred_labels,
+            "model_prediction": pred_labels,  # required column name
             "true_label": test_df[TARGET_COLUMN].astype(str).values,
         }
     )
@@ -281,10 +313,20 @@ def main():
     print("\n[Info] Test classification report:")
     print(test_report)
 
+    # ========================
+    # TEST CONFUSION MATRIX
+    # ========================
+    test_cm = confusion_matrix(y_true_ids, y_pred_ids, labels=list(range(len(id2label))))
+    test_cm_df = pd.DataFrame(test_cm, index=target_names, columns=target_names)
+    test_cm_path = os.path.join(OUTPUT_DIR, "confusion_matrix_test.csv")
+    test_cm_df.to_csv(test_cm_path)
+    print(f"[Info] Saved test confusion matrix to {test_cm_path}")
+
     # Save predictions CSV
     test_csv_path = os.path.join(PREDICTIONS_DIR, f"{MODEL_NAME}_test_predictions.csv")
     out_df.to_csv(test_csv_path, index=False)
     print(f"[Info] Saved test predictions to {test_csv_path}")
+    
 
 
 if __name__ == "__main__":
