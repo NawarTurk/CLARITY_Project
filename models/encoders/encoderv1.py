@@ -1,10 +1,5 @@
 import inspect
 
-# Discourse-style finetuning & evaluation (no-freezing variant)
-# - Loads train CSV, builds train/validation split
-# - Tokenizes (question, interview_answer) as a pair
-# - Trains with epoch-based evaluation + early stopping
-# - Saves validation and test reports, plus a test predictions CSV with per-class probabilities
 import os
 import random
 from typing import Dict, Tuple
@@ -13,8 +8,12 @@ import numpy as np
 import pandas as pd
 import torch
 from datasets import Dataset
-from sklearn.metrics import accuracy_score, f1_score, classification_report
-from sklearn.model_selection import train_test_split, confusion_matrix
+try:
+    from datasets import set_seed as set_datasets_seed
+except ImportError:
+    set_datasets_seed = None
+from sklearn.metrics import accuracy_score, f1_score, classification_report, confusion_matrix
+from sklearn.model_selection import train_test_split
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
@@ -53,14 +52,16 @@ def set_global_seed(seed: int = SEED) -> None:
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
     set_seed(seed)
+    if set_datasets_seed is not None:
+        set_datasets_seed(seed)
     os.environ["PYTHONHASHSEED"] = str(seed)
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
     if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
     print(f"[Info] Global seed set: {seed}")
 
 set_global_seed(SEED)  # :contentReference[oaicite:2]{index=2}
