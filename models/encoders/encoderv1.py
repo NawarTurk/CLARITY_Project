@@ -1,3 +1,4 @@
+import inspect
 import os
 import random
 from typing import Dict, Tuple
@@ -64,11 +65,6 @@ def load_and_prepare_dataframe() -> Tuple[pd.DataFrame, Dict[str, int], Dict[int
     """Load the training CSV, keep relevant columns, and encode labels."""
     df = pd.read_csv(TRAIN_CSV_PATH)
 
-    required_columns = {QUESTION_COLUMN, ANSWER_COLUMN, TARGET_COLUMN}
-    missing = required_columns.difference(df.columns)
-    if missing:
-        raise ValueError(f"Missing required columns in training CSV: {', '.join(sorted(missing))}")
-
     df = df.dropna(subset=[QUESTION_COLUMN, ANSWER_COLUMN, TARGET_COLUMN]).copy()
     df["text"] = df.apply(
         lambda row: f"Interview_question : {row[QUESTION_COLUMN]}\nAnswer: {row[ANSWER_COLUMN]}",
@@ -126,43 +122,57 @@ def compute_metrics(eval_pred):
     f1_micro = f1_score(labels, predictions, average="micro")
     return {"accuracy": accuracy, "f1_macro": f1_macro, "f1_micro": f1_micro}
 
-def load_test_dataframe(label2id: Dict[str, int]) -> Tuple[pd.DataFrame, pd.DataFrame, bool]:
-    """
-    Load test csv. Build the 'text' column like training.
-    If labels exist, map them with the *training* label2id.
-    Returns:
-        df_proc: dataframe with columns ['text'] or ['text','label'] (if labels present)
-        df_raw: original rows (so we can write question/answer to predictions)
-        has_labels: bool
-    """
+
+def build_training_arguments(common_args: Dict) -> Tuple[TrainingArguments, bool]:
+    """Create TrainingArguments compatible with the installed transformers version."""
+    signature_params = inspect.signature(TrainingArguments.__init__).parameters
+    args = dict(common_args)
+
+    epoch_params = {
+        "evaluation_strategy": "epoch",
+        "save_strategy": "epoch",
+        "load_best_model_at_end": True,
+        "metric_for_best_model": "eval_accuracy",
+        "greater_is_better": True,
+        "logging_strategy": "epoch",
+        "report_to": "none",
+    }
+
+    supports_epoch_strategies = all(key in signature_params for key in ("evaluation_strategy", "save_strategy"))
+    if supports_epoch_strategies:
+        for key, value in epoch_params.items():
+            if key in signature_params:
+                args[key] = value
+        return TrainingArguments(**args), True
+
+    step_params = {
+        "eval_steps": 100,
+        "save_steps": 100,
+        "logging_steps": 100,
+    }
+    for key, value in step_params.items():
+        if key in signature_params:
+            args[key] = value
+
+    return TrainingArguments(**args), False
+
+def load_test_dataframe(label2id: Dict[str, int]) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Load the test CSV, build the text column, and map labels with the training label2id."""
     if not os.path.exists(TEST_CSV_PATH):
         raise FileNotFoundError(f"Test CSV not found at {TEST_CSV_PATH}")
 
     df = pd.read_csv(TEST_CSV_PATH)
-    required = {QUESTION_COLUMN, ANSWER_COLUMN}
-    missing = required.difference(df.columns)
-    if missing:
-        raise ValueError(f"Missing columns in test CSV: {', '.join(sorted(missing))}")
+    df = df.dropna(subset=[QUESTION_COLUMN, ANSWER_COLUMN, TARGET_COLUMN]).copy()
 
-    df = df.dropna(subset=[QUESTION_COLUMN, ANSWER_COLUMN]).copy()
-
-    # Build text exactly like training
     df["text"] = df.apply(
         lambda row: f"Interview_question : {row[QUESTION_COLUMN]}\nAnswer: {row[ANSWER_COLUMN]}",
         axis=1,
     )
 
-    has_labels = TARGET_COLUMN in df.columns and not df[TARGET_COLUMN].isna().all()
     df_proc = df[["text"]].copy()
+    df_proc["label"] = df[TARGET_COLUMN].map(label2id)
 
-    if has_labels:
-        # Ensure no unseen labels sneak in
-        unseen = set(df[TARGET_COLUMN].unique()) - set(label2id.keys())
-        if unseen:
-            raise ValueError(f"Unseen labels in test set: {unseen}")
-        df_proc["label"] = df[TARGET_COLUMN].map(label2id)
-
-    return df_proc, df, has_labels
+    return df_proc, df
 
 
 
@@ -197,41 +207,9 @@ def run_training() -> None:
         fp16=torch.cuda.is_available(),
     )
 
-    early_stopping_enabled = True
+    training_args, epoch_strategies_supported = build_training_arguments(common_args)
 
-    try:
-        training_args = TrainingArguments(
-            evaluation_strategy="epoch",
-            save_strategy="epoch",
-            load_best_model_at_end=True,
-            metric_for_best_model="eval_accuracy",
-            greater_is_better=True,
-            logging_strategy="epoch",
-            report_to="none",
-            **common_args,
-        )
-    except TypeError:
-        try:
-            training_args = TrainingArguments(
-                **common_args,
-                eval_steps=100,
-                save_steps=100,
-                logging_steps=100,
-            )
-            early_stopping_enabled = False
-            print(
-                "[Warn] Falling back to step-based evaluation due to older transformers; "
-                "early stopping will be disabled."
-            )
-        except TypeError:
-            training_args = TrainingArguments(**common_args)
-            early_stopping_enabled = False
-            print(
-                "[Warn] Using minimal TrainingArguments due to very old transformers; "
-                "early stopping will be disabled."
-            )
-
-    callbacks = [EarlyStoppingCallback(early_stopping_patience=3)] if early_stopping_enabled else None
+    callbacks = [EarlyStoppingCallback(early_stopping_patience=3)] if epoch_strategies_supported else None
 
     trainer = Trainer(
         model=model,
@@ -272,69 +250,63 @@ def run_training() -> None:
 
     print(f"[Info] Best model checkpoints remain under {OUTPUT_DIR}")
 
-    # ----- Test predictions (and metrics if labels exist) -----
-    if os.path.exists(TEST_CSV_PATH):
-        os.makedirs(PREDICTIONS_DIR, exist_ok=True)
+    # ----- Test predictions -----
+    os.makedirs(PREDICTIONS_DIR, exist_ok=True)
 
-        test_proc_df, test_raw_df, test_has_labels = load_test_dataframe(label2id)
+    test_proc_df, test_raw_df = load_test_dataframe(label2id)
 
-        test_ds = Dataset.from_pandas(test_proc_df.reset_index(drop=True), preserve_index=False)
+    test_ds = Dataset.from_pandas(test_proc_df.reset_index(drop=True), preserve_index=False)
 
-        def tok_test(batch):
-            return tokenizer(
-                batch["text"],
-                truncation=True,
-                padding="max_length",
-                max_length=MAX_LENGTH,
-            )
+    def tok_test(batch):
+        return tokenizer(
+            batch["text"],
+            truncation=True,
+            padding="max_length",
+            max_length=MAX_LENGTH,
+        )
 
-        test_ds = test_ds.map(tok_test, batched=True)
-        cols = ["input_ids", "attention_mask"] + (["label"] if test_has_labels else [])
-        test_ds.set_format(type="torch", columns=cols)
+    test_ds = test_ds.map(tok_test, batched=True)
+    test_ds.set_format(type="torch", columns=["input_ids", "attention_mask", "label"])
 
-        # Predictions (no training!)
-        test_predictions = trainer.predict(test_ds)
-        probs = torch.softmax(torch.tensor(test_predictions.predictions), dim=-1).numpy()
-        pred_ids = probs.argmax(axis=-1)
-        pred_labels = [id2label[int(i)] for i in pred_ids]
+    # Predictions (no training!)
+    test_predictions = trainer.predict(test_ds)
+    probs = torch.softmax(torch.tensor(test_predictions.predictions), dim=-1).numpy()
+    pred_ids = probs.argmax(axis=-1)
+    pred_labels = [id2label[int(i)] for i in pred_ids]
 
-        # Build a per-row predictions CSV
-        pred_df = pd.DataFrame({
-            "question": test_raw_df[QUESTION_COLUMN].values,
-            "answer":   test_raw_df[ANSWER_COLUMN].values,
-            "pred_label": pred_labels,
-        })
-        for i, lab in sorted(id2label.items()):
-            pred_df[f"prob_{lab}"] = probs[:, i]
+    # Build a per-row predictions CSV
+    pred_df = pd.DataFrame({
+        "question": test_raw_df[QUESTION_COLUMN].values,
+        "answer":   test_raw_df[ANSWER_COLUMN].values,
+        "pred_label": pred_labels,
+    })
+    for i, lab in sorted(id2label.items()):
+        pred_df[f"prob_{lab}"] = probs[:, i]
 
-        # If labels exist, add them + metrics & report
-        if test_has_labels:
-            true_labels = test_raw_df[TARGET_COLUMN].astype(str).values
-            pred_df["true_label"] = true_labels
+    true_labels = test_raw_df[TARGET_COLUMN].astype(str).values
+    pred_df["true_label"] = true_labels
 
-            # Compute metrics on the test set
-            test_metrics = trainer.evaluate(test_ds, metric_key_prefix="test")
-            print("\n[Info] Test metrics:")
-            for k, v in test_metrics.items():
-                print(f"  {k}: {v:.4f}" if isinstance(v, float) else f"  {k}: {v}")
+    # Compute metrics on the test set
+    test_metrics = trainer.evaluate(test_ds, metric_key_prefix="test")
+    print("\n[Info] Test metrics:")
+    for k, v in test_metrics.items():
+        print(f"  {k}: {v:.4f}" if isinstance(v, float) else f"  {k}: {v}")
 
-            y_true_ids = test_proc_df["label"].to_numpy()
-            y_pred_ids = pred_ids
-            target_names = [id2label[i] for i in sorted(id2label)]
-            test_report = classification_report(
-                y_true_ids, y_pred_ids, target_names=target_names, digits=4, zero_division=0
-            )
-            print("\n[Info] Test classification report:")
-            print(test_report)
-            with open(os.path.join(OUTPUT_DIR, "test_report.txt"), "w", encoding="utf-8") as f:
-                f.write(test_report)
+    y_true_ids = test_proc_df["label"].to_numpy()
+    y_pred_ids = pred_ids
+    target_names = [id2label[i] for i in sorted(id2label)]
+    test_report = classification_report(
+        y_true_ids, y_pred_ids, target_names=target_names, digits=4, zero_division=0
+    )
+    print("\n[Info] Test classification report:")
+    print(test_report)
+    with open(os.path.join(OUTPUT_DIR, "test_report.txt"), "w", encoding="utf-8") as f:
+        f.write(test_report)
 
-        # Save predictions CSV
-        test_pred_path = os.path.join(PREDICTIONS_DIR, f"{MODEL_NAME}_test_predictions.csv")
-        pred_df.to_csv(test_pred_path, index=False)
-        print(f"[Info] Saved test predictions to {test_pred_path}")
-    else:
-        print(f"[Warn] {TEST_CSV_PATH} not found; skipping test predictions.")
+    # Save predictions CSV
+    test_pred_path = os.path.join(PREDICTIONS_DIR, f"{MODEL_NAME}_test_predictions.csv")
+    pred_df.to_csv(test_pred_path, index=False)
+    print(f"[Info] Saved test predictions to {test_pred_path}")
 
 
 
