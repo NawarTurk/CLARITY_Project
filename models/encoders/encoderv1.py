@@ -40,10 +40,10 @@ TARGET_COLUMN = "clarity_label"
 ARG1_KEY = "question"
 ARG2_KEY = "interview_answer"
 
-NUM_EPOCHS = 5
+NUM_EPOCHS = 20
 BATCH_SIZE = 16
 LEARNING_RATE = 5e-5
-MAX_LENGTH = 256
+MAX_LENGTH = 512
 VAL_SIZE = 0.10
 
 
@@ -138,8 +138,8 @@ def train_model(
         logging_strategy="epoch",
         report_to="none",
         load_best_model_at_end=True,
-        metric_for_best_model="eval_accuracy",
-        greater_is_better=True,
+        metric_for_best_model="eval_loss",
+        greater_is_better=False,
         num_train_epochs=NUM_EPOCHS,
         learning_rate=LEARNING_RATE,
         per_device_train_batch_size=BATCH_SIZE,
@@ -148,7 +148,7 @@ def train_model(
         seed=SEED,
         data_seed=SEED,
         fp16=torch.cuda.is_available(),
-        save_total_limit=3,
+        save_total_limit=1,  # keep only the best checkpoint to avoid clutter
     )
 
     ta_params = inspect.signature(TrainingArguments.__init__).parameters
@@ -171,9 +171,10 @@ def train_model(
         compute_metrics=compute_metrics,
         callbacks=callbacks,
     )
-
+        
     print("[Info] Starting training…")
     trainer.train()
+
 
     print("[Info] Evaluating on validation split…")
     eval_metrics = trainer.evaluate(eval_dataset=dev_ds)
