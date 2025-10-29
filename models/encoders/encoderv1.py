@@ -42,8 +42,11 @@ def _fs_safe_model_name(name: str) -> str:
 # 1) Setup
 # -----------------------------------------------------------------------------
 SEED = 42
-MODEL_NAME = "FacebookAI/xlm-roberta-base"
+MODEL_NAME = "distilbert-base-multilingual-cased"
 MODEL_NAME_SAFE = _fs_safe_model_name(MODEL_NAME)
+
+USE_EARLY_STOPPING = False   # set True to enable again
+EARLY_STOPPING_PATIENCE = 20
 
 TRAIN_CSV_PATH = os.path.join("datasets", "train_dataset.csv")
 TEST_CSV_PATH = os.path.join("datasets", "test_dataset.csv")
@@ -59,7 +62,7 @@ ARG1_KEY = "question"
 ARG2_KEY = "interview_answer"
 
 # NOTE: we keep these hyperparams the same
-NUM_EPOCHS = 5
+NUM_EPOCHS = 20
 BATCH_SIZE = 16
 LEARNING_RATE = 5e-5
 MAX_LENGTH = 512
@@ -252,8 +255,11 @@ def train_model(
 
     training_args = TrainingArguments(**filtered_kwargs)
 
-    callbacks = [EarlyStoppingCallback(early_stopping_patience=2)]
-
+    callbacks = (
+        [EarlyStoppingCallback(early_stopping_patience=EARLY_STOPPING_PATIENCE)]
+        if USE_EARLY_STOPPING
+        else []
+    )   
     trainer = WeightedTrainer(
         class_weights=class_weights_tensor,
         model=model,
