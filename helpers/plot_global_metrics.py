@@ -4,11 +4,11 @@ import seaborn as sns
 from pathlib import Path
 
 GLOBAL_REPORT_DIR = Path(__file__).resolve().parents[1] / "results" / "eval_logs" / "global"
-PLOTS_DIR = Path(__file__).resolve().parents[1] / "results" /  "plots"
+PLOTS_DIR = Path(__file__).resolve().parents[1] / "results" /  "plots" / "prompt"
 
 def main():
     """Plot F1 macro/micro/weighted + accuracy together for each grouping variable, with values on bars."""
-    csv_path = GLOBAL_REPORT_DIR / "global_f1_summary.csv"
+    csv_path = GLOBAL_REPORT_DIR / "prompt_global_f1_summary.csv"
     if not csv_path.exists():
         print(f"⚠️ Global summary not found at {csv_path}")
         return

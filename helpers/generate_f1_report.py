@@ -2,10 +2,10 @@ import pandas as pd
 from pathlib import Path
 from sklearn.metrics import accuracy_score, classification_report, f1_score
 
-PREDICTION_DIR = Path(__file__).resolve().parents[1] / "results" / "predictions"
+PREDICTION_DIR = Path(__file__).resolve().parents[1] / "results" / "predictions" / "prompt"
 TARGET_COLUMN = "clarity_label"
 MODEL_PREDICTION_COLUMN = "model_prediction"
-OUTPUT_DIR = Path(__file__).resolve().parents[1] / "results" / "eval_logs" / "detailed"
+OUTPUT_DIR = Path(__file__).resolve().parents[1] / "results" / "eval_logs" / "detailed" / "prompt"
 GLOBAL_REPORT_DIR = Path(__file__).resolve().parents[1] / "results" / "eval_logs" / "global"
 
 MODEL_FAMILY_INFO = {
@@ -36,7 +36,7 @@ def save_global_report(global_report):
 
     df_global = pd.DataFrame(global_report)
     GLOBAL_REPORT_DIR.mkdir(parents=True, exist_ok=True)
-    global_path = GLOBAL_REPORT_DIR / "global_f1_summary.csv"
+    global_path = GLOBAL_REPORT_DIR / "prompt_global_f1_summary.csv"
     df_global.to_csv(global_path, index=False)
     print(f"\n✅ Global summary saved to {global_path}")
 

@@ -4,25 +4,25 @@ from tqdm import tqdm
 from huggingface_hub import InferenceClient
 
 test_data_path  = os.path.join("..", "..", "datasets", "test_dataset.csv")
-prediction_path = os.path.join("..", "..", "results", "predictions")
+prediction_path = os.path.join("..", "..", "results", "predictions", "prompt")
 prompts_path    = os.path.join("..", "..", "prompts")
 
 # NOTE: you need to check if a certain model is deployed by any HF inference provider
 MODEL_REGISTRY = {
     # ---- LLaMA family ----
-    # "llama-3.1-nemotron-253b": ("nvidia/Llama-3_1-Nemotron-Ultra-253B-v1", 'nebius'),
-    # "llama-3.1-405b-Instruct": ("meta-llama/Llama-3.1-405B-Instruct", 'nebius'),
-    # "llama-3.3-70b-Instruct": ("meta-llama/Llama-3.3-70B-Instruct", 'nebius'), 
+    "llama-3.1-nemotron-253b": ("nvidia/Llama-3_1-Nemotron-Ultra-253B-v1", 'nebius'),
+    "llama-3.1-405b-Instruct": ("meta-llama/Llama-3.1-405B-Instruct", 'nebius'),
+    "llama-3.3-70b-Instruct": ("meta-llama/Llama-3.3-70B-Instruct", 'nebius'), 
 
     # # ---- Qwen family ---- 
-    # "qwen3-coder-480b-Instruct": ("Qwen/Qwen3-Coder-480B-A35B-Instruct",  'nebius'), 
+    "qwen3-coder-480b-Instruct": ("Qwen/Qwen3-Coder-480B-A35B-Instruct",  'nebius'), 
 
-    # "qwen3-235b-instruct": ("Qwen/Qwen3-235B-A22B-Instruct-2507",'nebius'), 
-    # "qwen3-80b-instruct": ("Qwen/Qwen3-Next-80B-A3B-Instruct", 'novita'), 
-    # "qwen3-32b-instruct": ("Qwen/Qwen3-30B-A3B-Instruct-2507",'nebius'), 
+    "qwen3-235b-instruct": ("Qwen/Qwen3-235B-A22B-Instruct-2507",'nebius'), 
+    "qwen3-80b-instruct": ("Qwen/Qwen3-Next-80B-A3B-Instruct", 'novita'), 
+    "qwen3-32b-instruct": ("Qwen/Qwen3-30B-A3B-Instruct-2507",'nebius'), 
 
     # ---- Mixtral ---- 
-    # "mixtral-8x22b-Instruct": ("mistralai/Mixtral-8x22B-Instruct-v0.1", 'nscale'),  
+    "mixtral-8x22b-Instruct": ("mistralai/Mixtral-8x22B-Instruct-v0.1", 'nscale'),  
     "mixtral-8x7b-Instruct": ("mistralai/Mixtral-8x7B-Instruct-v0.1", 'together'),
     
     # ---- ther models ---- 
