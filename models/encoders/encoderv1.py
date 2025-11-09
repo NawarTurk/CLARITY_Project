@@ -1,4 +1,5 @@
 import inspect
+import math
 import os
 import random
 import re
@@ -42,7 +43,7 @@ def _fs_safe_model_name(name: str) -> str:
 # 1) Setup
 # -----------------------------------------------------------------------------
 SEED = 42
-MODEL_NAME = "distilbert-base-multilingual-cased"
+MODEL_NAME = "FacebookAI/xlm-roberta-base"
 MODEL_NAME_SAFE = _fs_safe_model_name(MODEL_NAME)
 
 USE_EARLY_STOPPING = False   # set True to enable again
@@ -122,6 +123,30 @@ class WeightedTrainer(Trainer):
         return (loss, outputs) if return_outputs else loss
 
 
+def _epoch_to_int(epoch_value) -> int:
+    """Convert a possibly fractional epoch count into a 1-based integer epoch index."""
+    epoch_float = float(epoch_value)
+    epoch_idx = int(math.floor(epoch_float + 0.5))
+    return max(1, epoch_idx)
+
+
+def _best_eval_epoch(log_history, target_metric) -> int | None:
+    """Find the epoch associated with the target eval metric in Trainer.log_history."""
+    if target_metric is None:
+        return None
+    for record in log_history or []:
+        if "eval_loss" not in record:
+            continue
+        value = record.get("eval_loss")
+        if value is None:
+            continue
+        if abs(float(value) - float(target_metric)) <= 1e-9:
+            epoch_val = record.get("epoch")
+            if epoch_val is not None:
+                return _epoch_to_int(epoch_val)
+    return None
+
+
 # NEW: helper to plot train/eval loss history at the end
 def _plot_train_eval_loss(trainer) -> None:
     """Plot per-epoch training loss vs eval loss from Trainer.log_history."""
@@ -135,8 +160,9 @@ def _plot_train_eval_loss(trainer) -> None:
     def _by_epoch(points):
         acc = {}
         for ep, val in points:
-            if ep is not None and val is not None:
-                acc[float(ep)] = float(val)
+            if ep is None or val is None:
+                continue
+            acc[_epoch_to_int(ep)] = float(val)
         xs = sorted(acc.keys())
         ys = [acc[x] for x in xs]
         return xs, ys
@@ -153,6 +179,29 @@ def _plot_train_eval_loss(trainer) -> None:
         plt.plot(train_epochs, train_losses, marker="o", label="Train loss")
     if eval_epochs:
         plt.plot(eval_epochs, eval_losses, marker="o", label="Eval loss (on test set)")
+
+    combined_epochs = sorted(set(train_epochs + eval_epochs))
+    if combined_epochs:
+        plt.xticks(range(combined_epochs[0], combined_epochs[-1] + 1))
+
+    best_epoch = best_loss = None
+    if eval_epochs:
+        best_idx = int(np.argmin(eval_losses))
+        best_epoch = eval_epochs[best_idx]
+        best_loss = eval_losses[best_idx]
+        plt.scatter([best_epoch], [best_loss], marker="*", s=120, color="red", label="Best eval loss")
+        loss_scale = max(best_loss, max(eval_losses) if eval_losses else 1.0)
+        y_offset = max(0.02, 0.08 * loss_scale)
+        plt.annotate(
+            f"Best eval (epoch {best_epoch})",
+            xy=(best_epoch, best_loss),
+            xytext=(best_epoch, best_loss + y_offset),
+            ha="center",
+            va="bottom",
+            arrowprops={"arrowstyle": "->", "color": "red", "lw": 0.8},
+            fontsize=9,
+        )
+
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
     plt.title("Training vs Evaluation Loss")
@@ -160,6 +209,9 @@ def _plot_train_eval_loss(trainer) -> None:
     plt.legend()
     plt.tight_layout()
     plt.show()
+
+    if best_epoch is not None and best_loss is not None:
+        print(f"[Info] Best eval loss observed at epoch {best_epoch}: {best_loss:.4f}")
 
 
 # -----------------------------------------------------------------------------
@@ -243,7 +295,6 @@ def train_model(
         seed=SEED,
         data_seed=SEED,
         fp16=torch.cuda.is_available(),
-        save_total_limit=1,  # keep only best checkpoint
     )
 
     ta_params = inspect.signature(TrainingArguments.__init__).parameters
