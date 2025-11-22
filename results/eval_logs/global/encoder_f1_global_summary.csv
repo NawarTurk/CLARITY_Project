@@ -1,2 +1,2 @@
 model_name,task_id,arch,lang,size,tune,param_mode,f1_macro,f1_micro,f1_weighted,accuracy
-t1_xlmr_multi_base_full_fixed,t1,xlmr,multi,base,full,fixed,0.3671976171976172,0.577922077922078,0.5406216258488985,0.577922077922078
+t1_xlmr_multi_base_full_fixed,t1,xlmr,multi,base,full,fixed,0.32906022926313233,0.3538961038961039,0.37076259934852096,0.3538961038961039
