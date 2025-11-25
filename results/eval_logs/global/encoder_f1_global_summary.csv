@@ -1,2 +1,9 @@
-model_name,task_id,arch,lang,size,tune,param_mode,f1_macro,f1_micro,f1_weighted,accuracy
-t1_xlmr_multi_base_full_fixed,t1,xlmr,multi,base,full,fixed,0.32906022926313233,0.3538961038961039,0.37076259934852096,0.3538961038961039
+model_name,task_id,arch,lang,size,tune,param_mode,head_type,f1_macro,f1_micro,f1_weighted,accuracy
+t1_bert_en_base_full_fixed,t1,bert,en,base,full,fixed,defaultHead,0.5689089032742284,0.672077922077922,0.6757841675165064,0.672077922077922
+t1_mdeberta_multi_base_full_fixed,t1,mdeberta,multi,base,full,fixed,defaultHead,0.5574546075589916,0.7207792207792207,0.665553454399264,0.7207792207792207
+t1_xlmr_multi_base_full_fixed,t1,xlmr,multi,base,full,fixed,defaultHead,0.26718547341115434,0.6688311688311688,0.5361059174288746,0.6688311688311688
+t1_roberta_en_base_full_fixed,t1,roberta,en,base,full,fixed,defaultHead,0.20651723738051456,0.237012987012987,0.11425389381256386,0.237012987012987
+t1_mbert_multi_base_full_fixed,t1,mbert,multi,base,full,fixed,defaultHead,0.20541469703480875,0.2435064935064935,0.1161045658252362,0.2435064935064935
+t1_deberta_en_base_full_fixed,t1,deberta,en,base,full,fixed,defaultHead,0.19715592839381632,0.2077922077922078,0.10723413409972651,0.2077922077922078
+t1_roberta_en_large_full_fixed,t1,roberta,en,large,full,fixed,defaultHead,0.13608957795004306,0.2564935064935065,0.10471827913688378,0.2564935064935065
+t1_xlmr_multi_large_full_fixed,t1,xlmr,multi,large,full,fixed,defaultHead,0.04632426988922458,0.07467532467532467,0.010377839682975636,0.07467532467532467
