@@ -1,18 +1,18 @@
-Model: t1_bert_en_base_full_fixed
+Model: t1_bert_en_base_full_fixed_defaultHead
 Head Type: defaultHead
-F1 Macro: 0.569
-F1 Micro: 0.672
-F1 Weighted: 0.676
-Accuracy: 0.672
+F1 Macro: 0.607
+F1 Micro: 0.695
+F1 Weighted: 0.693
+Accuracy: 0.695
 
 Classification Report:
                  precision    recall  f1-score   support
 
-     Ambivalent      0.782     0.767     0.775       206
-Clear Non-Reply      0.321     0.739     0.447        23
-    Clear Reply      0.604     0.405     0.485        79
+     Ambivalent      0.770     0.782     0.776       206
+Clear Non-Reply      0.625     0.435     0.513        23
+    Clear Reply      0.518     0.544     0.531        79
 
-       accuracy                          0.672       308
-      macro avg      0.569     0.637     0.569       308
-   weighted avg      0.702     0.672     0.676       308
+       accuracy                          0.695       308
+      macro avg      0.638     0.587     0.607       308
+   weighted avg      0.695     0.695     0.693       308
 

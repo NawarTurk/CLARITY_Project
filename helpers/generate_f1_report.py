@@ -74,6 +74,8 @@ def process_encoder_predictions():
             print(f"[Warn] Skipping {f.name}: unable to parse model metadata.")
             continue
         task_id, arch, lang, size, tune, param_mode = parts[:6]
+        head_type = parts[6] if len(parts) >= 7 else "defaultHead"
+        report_basename = model_name if model_name.endswith(head_type) else f"{model_name}_{head_type}"
 
         report = classification_report(
             y_true,
@@ -85,6 +87,7 @@ def process_encoder_predictions():
 
         report_lines = (
             f"Model: {model_name}\n"
+            f"Head Type: {head_type}\n"
             f"F1 Macro: {f1_macro:.3f}\n"
             f"F1 Micro: {f1_micro:.3f}\n"
             f"F1 Weighted: {f1_weighted:.3f}\n"
@@ -92,7 +95,7 @@ def process_encoder_predictions():
             f"Classification Report:\n{report}\n"
         )
 
-        out_path = ENCODER_OUTPUT_DIR / f"{model_name}_f1Report.txt"
+        out_path = ENCODER_OUTPUT_DIR / f"{report_basename}_f1Report.txt"
         out_path.write_text(report_lines)
         print(f"Saved encoder report for {model_name}")
         count += 1
@@ -105,6 +108,7 @@ def process_encoder_predictions():
             "size": size,
             "tune": tune,
             "param_mode": param_mode,
+            "head_type": head_type,
             "f1_macro": f1_macro,
             "f1_micro": f1_micro,
             "f1_weighted": f1_weighted,

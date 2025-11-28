@@ -7,8 +7,7 @@ import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 ROOT = Path(__file__).resolve().parents[2]
-DEV_DATASET_DIR = ROOT / "datasets" / "dev"
-FALLBACK_DATASET = ROOT / "datasets" / "test_dataset.csv"
+TEST_DATASET = ROOT / "datasets" / "test_dataset.csv"
 MODELS_DIR = ROOT / "models" / "encoders" / "trained_models"
 OUT_DIR = ROOT / "results" / "predictions" / "detailed" / "encoder"
 
@@ -71,22 +70,6 @@ def _validate_model_artifacts(model_dir: Path) -> None:
         )
 
 
-def _pick_dev_dataset() -> Path:
-    """Return a dev dataset CSV path, preferring dev_dataset.csv if present."""
-    if not DEV_DATASET_DIR.exists() or not DEV_DATASET_DIR.is_dir():
-        if FALLBACK_DATASET.exists():
-            print(f"[Warn] Dev dataset directory missing; falling back to {FALLBACK_DATASET}")
-            return FALLBACK_DATASET
-        raise FileNotFoundError(f"Dev dataset directory not found: {DEV_DATASET_DIR}")
-    csv_files = sorted(DEV_DATASET_DIR.glob("*.csv"))
-    if not csv_files:
-        raise FileNotFoundError(f"No CSV files found in dev dataset directory: {DEV_DATASET_DIR}")
-    for candidate in csv_files:
-        if candidate.name.lower() == "dev_dataset.csv":
-            return candidate
-    return csv_files[0]
-
-
 def predict(model_dir: Path, df: pd.DataFrame):
     _validate_model_artifacts(model_dir)
     tokenizer = AutoTokenizer.from_pretrained(model_dir)
@@ -133,8 +116,7 @@ def main(argv):
     parser.add_argument("--model_name", required=True, help="Model folder name or 'all'.")
     args = parser.parse_args(argv)
 
-    dev_dataset = _pick_dev_dataset()
-    df = pd.read_csv(dev_dataset)
+    df = pd.read_csv(TEST_DATASET)
     for model_dir in list_model_dirs(args.model_name):
         predict(model_dir, df)
 
