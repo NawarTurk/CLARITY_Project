@@ -1,3 +1,5 @@
 experiment,model_name,task_id,arch,lang,size,tune,param_mode,head_type,f1_macro,f1_micro,f1_weighted,accuracy
 t1_bert_en_base_full_fixed_defaultHead,bert-base-uncased,t1,bert,en,base,full,fixed,defaultHead,0.607,0.695,0.693,0.695
+t1_deberta_en_base_full_fixed_defaultHead,microsoft/deberta-v3-base,t1,deberta,en,base,full,fixed,defaultHead,0.59,0.679,0.682,0.679
+t1_roberta_en_base_full_fixed_defaultHead,roberta-base,t1,roberta,en,base,full,fixed,defaultHead,0.558,0.669,0.655,0.669
 t1_roberta_en_large_full_fixed_defaultHead,roberta-large,t1,roberta,en,large,full,fixed,defaultHead,0.267,0.669,0.536,0.669
