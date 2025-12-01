@@ -1,18 +1,18 @@
 Model: t1_mbert_multi_base_full_fixed_defaultHead
 Head Type: defaultHead
-F1 Macro: 0.393
-F1 Micro: 0.584
-F1 Weighted: 0.555
-Accuracy: 0.584
+F1 Macro: 0.552
+F1 Micro: 0.653
+F1 Weighted: 0.649
+Accuracy: 0.653
 
 Classification Report:
                  precision    recall  f1-score   support
 
-     Ambivalent      0.719     0.772     0.745       206
-Clear Non-Reply      0.192     0.652     0.297        23
-    Clear Reply      0.667     0.076     0.136        79
+     Ambivalent      0.746     0.772     0.759       206
+Clear Non-Reply      0.500     0.478     0.489        23
+    Clear Reply      0.425     0.392     0.408        79
 
-       accuracy                          0.584       308
-      macro avg      0.526     0.500     0.393       308
-   weighted avg      0.667     0.584     0.555       308
+       accuracy                          0.653       308
+      macro avg      0.557     0.548     0.552       308
+   weighted avg      0.646     0.653     0.649       308
 

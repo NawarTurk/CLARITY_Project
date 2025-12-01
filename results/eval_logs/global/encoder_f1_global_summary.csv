@@ -1,5 +1,9 @@
 experiment,model_name,task_id,arch,lang,size,tune,param_mode,head_type,f1_macro,f1_micro,f1_weighted,accuracy
 t1_bert_en_base_full_fixed_defaultHead,bert-base-uncased,t1,bert,en,base,full,fixed,defaultHead,0.607,0.695,0.693,0.695
-t1_deberta_en_base_full_fixed_defaultHead,microsoft/deberta-v3-base,t1,deberta,en,base,full,fixed,defaultHead,0.59,0.679,0.682,0.679
 t1_roberta_en_base_full_fixed_defaultHead,roberta-base,t1,roberta,en,base,full,fixed,defaultHead,0.558,0.669,0.655,0.669
+t1_mbert_multi_base_full_fixed_defaultHead,bert-base-multilingual-cased,t1,mbert,multi,base,full,fixed,defaultHead,0.552,0.653,0.649,0.653
+t1_deberta_en_base_full_fixed_defaultHead,microsoft/deberta-v3-base,t1,deberta,en,base,full,fixed,defaultHead,0.35,0.581,0.537,0.581
+t1_mdeberta_multi_base_full_fixed_defaultHead,microsoft/mdeberta-v3-base,t1,mdeberta,multi,base,full,fixed,defaultHead,0.341,0.562,0.531,0.562
+t1_xlmr_multi_base_full_fixed_defaultHead,FacebookAI/xlm-roberta-base,t1,xlmr,multi,base,full,fixed,defaultHead,0.34,0.614,0.539,0.614
 t1_roberta_en_large_full_fixed_defaultHead,roberta-large,t1,roberta,en,large,full,fixed,defaultHead,0.267,0.669,0.536,0.669
+t1_xlmr_multi_large_full_fixed_defaultHead,FacebookAI/xlm-roberta-large,t1,xlmr,multi,large,full,fixed,defaultHead,0.136,0.256,0.105,0.256
