@@ -1,5 +1,8 @@
 experiment,model_name,task_id,arch,lang,size,tune,param_mode,head_type,f1_macro,f1_micro,f1_weighted,accuracy
+t1_bert_en_base_unfreezing75_fixed_defaultHead_unfreezeTop75,bert-base-uncased,t1,bert,en,base,unfreezing75,fixed,defaultHead,0.622,0.705,0.698,0.705
 t1_bert_en_base_full_fixed_defaultHead,bert-base-uncased,t1,bert,en,base,full,fixed,defaultHead,0.607,0.695,0.693,0.695
+t1_bert_en_base_unfreezing50_fixed_defaultHead_unfreezeTop50,bert-base-uncased,t1,bert,en,base,unfreezing50,fixed,defaultHead,0.589,0.669,0.676,0.669
+t1_bert_en_base_unfreezing25_fixed_defaultHead_unfreezeTop25,bert-base-uncased,t1,bert,en,base,unfreezing25,fixed,defaultHead,0.587,0.643,0.652,0.643
 t1_roberta_en_base_full_fixed_defaultHead,roberta-base,t1,roberta,en,base,full,fixed,defaultHead,0.558,0.669,0.655,0.669
 t1_mbert_multi_base_full_fixed_defaultHead,bert-base-multilingual-cased,t1,mbert,multi,base,full,fixed,defaultHead,0.552,0.653,0.649,0.653
 t1_deberta_en_base_full_fixed_defaultHead,microsoft/deberta-v3-base,t1,deberta,en,base,full,fixed,defaultHead,0.35,0.581,0.537,0.581

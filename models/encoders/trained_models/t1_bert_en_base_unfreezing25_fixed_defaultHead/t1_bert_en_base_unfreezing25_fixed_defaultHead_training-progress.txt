@@ -1,0 +1,37 @@
+Epoch  Progress%         ETA  Training Loss  Validation Loss   Accuracy   F1 Macro   F1 Micro
+---------------------------------------------------------------------------------------------
+    1       5.00      00m20s       0.950900         0.891344   0.457792   0.458222   0.457792
+    2      10.00      03m30s       0.779200         0.781636   0.597403   0.562745   0.597403
+    3      15.00      04m18s       0.647900         0.780534   0.613636   0.567681   0.613636
+    4      20.00      04m31s       0.517100         0.873259   0.642857   0.587233   0.642857
+    5      25.00      04m32s       0.378300         1.032592   0.636364   0.584501   0.636364
+    6      30.00      04m23s       0.284800         1.161224   0.597403   0.549488   0.597403
+    7      35.00      04m12s       0.204200         1.334706   0.636364   0.569911   0.636364
+    8      40.00      03m57s       0.166900         1.588244   0.659091   0.584697   0.659091
+    9      45.00      03m41s       0.127700         1.817040   0.652597   0.552785   0.652597
+
+[Final evaluation metrics]
+  eval_loss: 1.8170
+  eval_accuracy: 0.6526
+  eval_f1_macro: 0.5528
+  eval_f1_micro: 0.6526
+  eval_f1_weighted: 0.6546
+  eval_runtime: 1.1442
+  eval_samples_per_second: 269.1770
+  eval_steps_per_second: 17.4790
+  epoch: 9.0000
+  step: 1944
+
+[Layer freezing / trainable parameter summary]
+[Freeze] Embedding layer parameters frozen.
+*_Total encoder layers: 12
+*_Unfreezing from layer 9 to 11
+*_Total parameters:     109,484,547
+*__Trainable parameters: 21,856,515
+*__Trainable ratio:      19.96%
+✅ bert.encoder.layer.10: (16 params)
+✅ bert.encoder.layer.11: (16 params)
+✅ bert.encoder.layer.9: (16 params)
+✅ bert.pooler: (2 params)
+✅ classifier.bias: (1 params)
+✅ classifier.weight: (1 params)
