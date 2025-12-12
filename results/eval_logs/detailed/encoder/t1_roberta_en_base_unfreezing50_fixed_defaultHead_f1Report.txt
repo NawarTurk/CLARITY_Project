@@ -1,0 +1,18 @@
+Model: t1_roberta_en_base_unfreezing50_fixed_defaultHead
+Head Type: defaultHead
+F1 Macro: 0.600
+F1 Micro: 0.653
+F1 Weighted: 0.661
+Accuracy: 0.653
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.785     0.675     0.726       206
+Clear Non-Reply      0.413     0.826     0.551        23
+    Clear Reply      0.506     0.544     0.524        79
+
+       accuracy                          0.653       308
+      macro avg      0.568     0.682     0.600       308
+   weighted avg      0.686     0.653     0.661       308
+

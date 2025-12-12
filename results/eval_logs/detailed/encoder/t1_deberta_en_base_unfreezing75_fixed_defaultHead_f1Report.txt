@@ -1,0 +1,18 @@
+Model: t1_deberta_en_base_unfreezing75_fixed_defaultHead
+Head Type: defaultHead
+F1 Macro: 0.555
+F1 Micro: 0.571
+F1 Weighted: 0.588
+Accuracy: 0.571
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.762     0.558     0.644       206
+Clear Non-Reply      0.517     0.652     0.577        23
+    Clear Reply      0.359     0.582     0.444        79
+
+       accuracy                          0.571       308
+      macro avg      0.546     0.598     0.555       308
+   weighted avg      0.640     0.571     0.588       308
+

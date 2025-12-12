@@ -1,0 +1,43 @@
+Epoch  Progress%         ETA  Training Loss  Validation Loss   Accuracy   F1 Macro   F1 Micro
+---------------------------------------------------------------------------------------------
+    1       5.00      00m21s       1.046600         1.027351   0.253247   0.244530   0.253247
+    2      10.00      05m00s       0.925300         1.015715   0.301948   0.324634   0.301948
+    3      15.00      06m11s       0.842200         0.937062   0.613636   0.511640   0.613636
+    4      20.00      06m29s       0.747100         1.124241   0.636364   0.517521   0.636364
+    5      25.00      06m29s       0.702400         0.930276   0.668831   0.520562   0.668831
+    6      30.00      06m18s       0.613100         1.061550   0.577922   0.521029   0.577922
+    7      35.00      06m00s       0.558800         0.913162   0.665584   0.551387   0.665584
+    8      40.00      05m40s       0.474300         1.198347   0.555195   0.505581   0.555195
+    9      45.00      05m16s       0.389900         1.207880   0.610390   0.530888   0.610390
+   10      50.00      04m51s       0.338400         1.581617   0.529221   0.479694   0.529221
+   11      55.00      04m25s       0.294800         1.444712   0.548701   0.526467   0.548701
+   12      60.00      03m57s       0.259000         1.790102   0.577922   0.526578   0.577922
+
+[Final evaluation metrics]
+  eval_loss: 1.7901
+  eval_accuracy: 0.5779
+  eval_f1_macro: 0.5266
+  eval_f1_micro: 0.5779
+  eval_f1_weighted: 0.5913
+  eval_runtime: 1.0762
+  eval_samples_per_second: 286.1960
+  eval_steps_per_second: 18.5840
+  epoch: 12.0000
+  step: 2592
+
+[Layer freezing / trainable parameter summary]
+[Freeze] Embedding layer parameters frozen.
+*_Unfreezing ratio: 50% of encoder layers
+*_Total encoder layers: 12
+*_Unfreezing from layer 6 to 11
+*_Total parameters:     278,045,955
+*__Trainable parameters: 43,120,131
+*__Trainable ratio:      15.51%
+✅ classifier.dense: (2 params)
+✅ classifier.out_proj: (2 params)
+✅ roberta.encoder.layer.10: (16 params)
+✅ roberta.encoder.layer.11: (16 params)
+✅ roberta.encoder.layer.6: (16 params)
+✅ roberta.encoder.layer.7: (16 params)
+✅ roberta.encoder.layer.8: (16 params)
+✅ roberta.encoder.layer.9: (16 params)
