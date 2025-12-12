@@ -14,6 +14,7 @@ t1_bert_en_base_unfreezing25_fixed_defaultHead,bert-base-uncased,t1,bert,en,base
 t1_xlmr_multi_base_unfreezing25_fixed_defaultHead,FacebookAI/xlm-roberta-base,t1,xlmr,multi,base,unfreezing25,fixed,defaultHead,0.586,0.682,0.682,0.682
 t1_mdeberta_multi_base_unfreezing25_fixed_defaultHead,microsoft/mdeberta-v3-base,t1,mdeberta,multi,base,unfreezing25,fixed,defaultHead,0.58,0.656,0.667,0.656
 t1_roberta_en_base_unfreezing25_fixed_defaultHead,roberta-base,t1,roberta,en,base,unfreezing25,fixed,defaultHead,0.574,0.646,0.655,0.646
+t1_xlmr_multi_large_unfreezing25_fixed_defaultHead,FacebookAI/xlm-roberta-large,t1,xlmr,multi,large,unfreezing25,fixed,defaultHead,0.559,0.692,0.676,0.692
 t1_roberta_en_base_full_fixed_defaultHead,roberta-base,t1,roberta,en,base,full,fixed,defaultHead,0.558,0.669,0.655,0.669
 t1_deberta_en_base_unfreezing75_fixed_defaultHead,microsoft/deberta-v3-base,t1,deberta,en,base,unfreezing75,fixed,defaultHead,0.555,0.571,0.588,0.571
 t1_mdeberta_multi_base_unfreezing50_fixed_defaultHead,microsoft/mdeberta-v3-base,t1,mdeberta,multi,base,unfreezing50,fixed,defaultHead,0.555,0.662,0.663,0.662
@@ -26,5 +27,7 @@ t1_mdeberta_multi_base_full_fixed_defaultHead,microsoft/mdeberta-v3-base,t1,mdeb
 t1_xlmr_multi_base_full_fixed_defaultHead,FacebookAI/xlm-roberta-base,t1,xlmr,multi,base,full,fixed,defaultHead,0.34,0.614,0.539,0.614
 t1_roberta_en_large_full_fixed_defaultHead,roberta-large,t1,roberta,en,large,full,fixed,defaultHead,0.267,0.669,0.536,0.669
 t1_roberta_en_large_unfreezing50_fixed_defaultHead,roberta-large,t1,roberta,en,large,unfreezing50,fixed,defaultHead,0.267,0.669,0.536,0.669
+t1_xlmr_multi_large_unfreezing75_fixed_defaultHead,FacebookAI/xlm-roberta-large,t1,xlmr,multi,large,unfreezing75,fixed,defaultHead,0.267,0.669,0.536,0.669
 t1_roberta_en_large_unfreezing75_fixed_defaultHead,roberta-large,t1,roberta,en,large,unfreezing75,fixed,defaultHead,0.136,0.256,0.105,0.256
 t1_xlmr_multi_large_full_fixed_defaultHead,FacebookAI/xlm-roberta-large,t1,xlmr,multi,large,full,fixed,defaultHead,0.136,0.256,0.105,0.256
+t1_xlmr_multi_large_unfreezing50_fixed_defaultHead,FacebookAI/xlm-roberta-large,t1,xlmr,multi,large,unfreezing50,fixed,defaultHead,0.046,0.075,0.01,0.075
