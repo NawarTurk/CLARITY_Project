@@ -1,0 +1,18 @@
+Model: t1_roberta_en_base_lora8_fixed_defaultHead
+Head Type: defaultHead
+F1 Macro: 0.565
+F1 Micro: 0.614
+F1 Weighted: 0.626
+Accuracy: 0.614
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.782     0.626     0.695       206
+Clear Non-Reply      0.377     0.870     0.526        23
+    Clear Reply      0.444     0.506     0.473        79
+
+       accuracy                          0.614       308
+      macro avg      0.535     0.667     0.565       308
+   weighted avg      0.665     0.614     0.626       308
+
