@@ -1,18 +1,18 @@
 Model: t1_mdeberta_multi_base_lora8_fixed_defaultHead
 Head Type: defaultHead
-F1 Macro: 0.070
-F1 Micro: 0.088
-F1 Weighted: 0.096
-Accuracy: 0.088
+F1 Macro: 0.142
+F1 Micro: 0.240
+F1 Weighted: 0.124
+Accuracy: 0.240
 
 Classification Report:
                  precision    recall  f1-score   support
 
-     Ambivalent      0.533     0.078     0.136       206
-Clear Non-Reply      0.040     0.478     0.073        23
-    Clear Reply      0.000     0.000     0.000        79
+     Ambivalent      0.400     0.019     0.037       206
+Clear Non-Reply      0.000     0.000     0.000        23
+    Clear Reply      0.248     0.886     0.388        79
 
-       accuracy                          0.088       308
-      macro avg      0.191     0.185     0.070       308
-   weighted avg      0.360     0.088     0.096       308
+       accuracy                          0.240       308
+      macro avg      0.216     0.302     0.142       308
+   weighted avg      0.331     0.240     0.124       308
 

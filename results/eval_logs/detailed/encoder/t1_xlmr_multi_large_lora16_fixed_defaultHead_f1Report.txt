@@ -1,0 +1,18 @@
+Model: t1_xlmr_multi_large_lora16_fixed_defaultHead
+Head Type: defaultHead
+F1 Macro: 0.541
+F1 Micro: 0.669
+F1 Weighted: 0.642
+Accuracy: 0.669
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.717     0.850     0.778       206
+Clear Non-Reply      0.579     0.478     0.524        23
+    Clear Reply      0.444     0.253     0.323        79
+
+       accuracy                          0.669       308
+      macro avg      0.580     0.527     0.541       308
+   weighted avg      0.637     0.669     0.642       308
+
