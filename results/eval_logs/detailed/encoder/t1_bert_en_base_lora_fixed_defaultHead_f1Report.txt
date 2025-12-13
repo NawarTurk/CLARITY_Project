@@ -1,0 +1,18 @@
+Model: t1_bert_en_base_lora_fixed_defaultHead
+Head Type: defaultHead
+F1 Macro: 0.481
+F1 Micro: 0.536
+F1 Weighted: 0.558
+Accuracy: 0.536
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.768     0.529     0.626       206
+Clear Non-Reply      0.295     0.565     0.388        23
+    Clear Reply      0.352     0.544     0.428        79
+
+       accuracy                          0.536       308
+      macro avg      0.472     0.546     0.481       308
+   weighted avg      0.626     0.536     0.558       308
+
