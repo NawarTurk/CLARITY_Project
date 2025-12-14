@@ -7,8 +7,18 @@
 __pycache__/
 *.pyc
 *.pyo
-models/encoders/trained_models/
-results/models/
+
+# Ignore all saved models/artifacts
+/models/encoders/trained_models/**
+
+# …but keep directories so we can re-include files inside them
+!/models/encoders/trained_models/**/
+
+# Keep only training progress logs
+!/models/encoders/trained_models/**/*_training-progress.txt
+# (or, if your file is exactly named training-progress.txt)
+# !/models/encoders/trained_models/**/training-progress.txt
+results/models
 
 temp_scripts/
 del/
