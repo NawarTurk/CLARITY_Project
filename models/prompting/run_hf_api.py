@@ -11,7 +11,7 @@ prompts_path    = os.path.join("..", "..", "prompts")
 MODEL_REGISTRY = {
     # ---- LLaMA family ----
     "llama-3.1-nemotron-253b": ("nvidia/Llama-3_1-Nemotron-Ultra-253B-v1", 'nebius'),
-    "llama-3.1-405b-Instruct": ("meta-llama/Llama-3.1-405B-Instruct", 'nebius'),
+    # "llama-3.1-405b-Instruct": ("meta-llama/Llama-3.1-405B-Instruct", 'nebius'), no longer working
     "llama-3.3-70b-Instruct": ("meta-llama/Llama-3.3-70B-Instruct", 'nebius'), 
 
     # # ---- Qwen family ---- 
@@ -23,8 +23,7 @@ MODEL_REGISTRY = {
 
     # ---- Mixtral ---- 
     "mixtral-8x22b-Instruct": ("mistralai/Mixtral-8x22B-Instruct-v0.1", 'nscale'),  
-    "mixtral-8x7b-Instruct": ("mistralai/Mixtral-8x7B-Instruct-v0.1", 'together'),
-    
+    # "mixtral-8x7b-Instruct": ("mistralai/Mixtral-8x7B-Instruct-v0.1", 'together'), no longer working
     # ---- ther models ---- 
     # "gpt-oss-120b": "openai/gpt-oss-120b",  # returning empty replies  
     # "phi-2.7b":   "microsoft/phi-2",
@@ -32,7 +31,7 @@ MODEL_REGISTRY = {
 }
 
 # ---- configuration ----
-prompt_template = "04_t1_fs_base-27-shot_Q.txt" 
+prompt_template = "07_t1_cot_thot_Q.txt" 
 question_col =  "question"  
 hf_token = os.environ["HF_TOKEN"]  # token with “Make calls to Inference Providers”
 
