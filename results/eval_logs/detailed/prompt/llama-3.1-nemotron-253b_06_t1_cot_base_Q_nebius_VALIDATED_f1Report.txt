@@ -1,0 +1,17 @@
+File: llama-3.1-nemotron-253b_06_t1_cot_base_Q_nebius_VALIDATED.csv
+F1 Macro: 0.250
+F1 Micro: 0.218
+F1 Weighted: 0.245
+Accuracy: 0.218
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.727     0.117     0.201       206
+Clear Non-Reply      0.092     1.000     0.169        23
+    Clear Reply      0.769     0.253     0.381        79
+
+       accuracy                          0.218       308
+      macro avg      0.530     0.457     0.250       308
+   weighted avg      0.691     0.218     0.245       308
+
