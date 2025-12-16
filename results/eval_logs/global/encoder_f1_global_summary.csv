@@ -1,4 +1,5 @@
 model_name,task_id,arch,lang,size,tune,param_mode,head_type,f1_macro,f1_micro,f1_weighted,accuracy
+t1_majorityStage1_majorityStage1_majorityStage1_majorityStage1_fixed_defaultHead,t1,majorityStage1,majorityStage1,majorityStage1,majorityStage1,fixed,defaultHead,0.6740872569834728,0.737012987012987,0.7381234196052481,0.737012987012987
 t1_deberta_en_base_unfreezing25_fixed_defaultHead,t1,deberta,en,base,unfreezing25,fixed,defaultHead,0.6279649140072424,0.6785714285714286,0.6896458352667381,0.6785714285714286
 t1_bert_en_base_lora16_fixed_defaultHead,t1,bert,en,base,lora16,fixed,defaultHead,0.6270641400144809,0.698051948051948,0.7040427440135327,0.698051948051948
 t1_bert_en_base_unfreezing75_fixed_defaultHead,t1,bert,en,base,unfreezing75,fixed,defaultHead,0.6223784623784624,0.7045454545454546,0.6975944121398666,0.7045454545454546

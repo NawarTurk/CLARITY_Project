@@ -1,0 +1,17 @@
+File: qwen3-coder-480b-Instruct_08_t1_hybrid_re2-thot_Q_nebius_VALIDATED.csv
+F1 Macro: 0.535
+F1 Micro: 0.633
+F1 Weighted: 0.632
+Accuracy: 0.633
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.740     0.733     0.737       206
+Clear Non-Reply      0.333     0.739     0.459        23
+    Clear Reply      0.509     0.342     0.409        79
+
+       accuracy                          0.633       308
+      macro avg      0.528     0.605     0.535       308
+   weighted avg      0.651     0.633     0.632       308
+

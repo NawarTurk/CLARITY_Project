@@ -1,0 +1,17 @@
+File: qwen3-32b-instruct_08_t1_hybrid_re2-thot_Q_nebius_VALIDATED.csv
+F1 Macro: 0.469
+F1 Micro: 0.675
+F1 Weighted: 0.628
+Accuracy: 0.675
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.710     0.903     0.795       206
+Clear Non-Reply      0.320     0.348     0.333        23
+    Clear Reply      0.667     0.177     0.280        79
+
+       accuracy                          0.675       308
+      macro avg      0.566     0.476     0.469       308
+   weighted avg      0.670     0.675     0.628       308
+
