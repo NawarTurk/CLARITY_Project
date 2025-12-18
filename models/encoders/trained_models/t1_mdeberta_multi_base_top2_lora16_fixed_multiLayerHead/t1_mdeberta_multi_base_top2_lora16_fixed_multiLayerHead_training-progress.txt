@@ -1,0 +1,47 @@
+Epoch  Progress%         ETA  Training Loss  Validation Loss   Accuracy   F1 Macro   F1 Micro
+---------------------------------------------------------------------------------------------
+    1       5.00      01m11s       1.046300         0.992385   0.409091   0.396383   0.409091
+    2      10.00      18m19s       0.897700         0.994131   0.525974   0.464574   0.525974
+    3      15.00      25m15s       0.781400         0.844238   0.646104   0.552322   0.646104
+    4      20.00      32m27s       0.707400         1.114057   0.607143   0.492381   0.607143
+    5      25.00      31m03s       0.656600         0.854826   0.655844   0.562744   0.655844
+    6      30.00      32m32s       0.554600         1.150960   0.594156   0.551887   0.594156
+    7      35.00      29m18s       0.533900         0.874460   0.678571   0.602574   0.678571
+    8      40.00      27m36s       0.471000         1.314028   0.558442   0.505701   0.558442
+    9      45.00      26m04s       0.420700         0.966756   0.646104   0.594132   0.646104
+   10      50.00      23m47s       0.357800         1.356936   0.633117   0.519439   0.633117
+   11      55.00      21m48s       0.305700         1.155388   0.636364   0.572813   0.636364
+   12      60.00      19m34s       0.275800         1.359107   0.655844   0.539895   0.655844
+
+[Final evaluation metrics]
+  eval_loss: 1.3591
+  eval_accuracy: 0.6558
+  eval_f1_macro: 0.5399
+  eval_f1_micro: 0.6558
+  eval_f1_weighted: 0.6641
+  eval_runtime: 4.1724
+  eval_samples_per_second: 73.8180
+  eval_steps_per_second: 4.7930
+  epoch: 12.0000
+  step: 2592
+
+[Layer freezing / trainable parameter summary]
+*_Head type: mlp (multiLayerHead)
+[Freeze] Embedding layer parameters frozen.
+*_Top-K unfreezing: top_k=2 (layers 10..11), total_layers=12
+*_Total parameters:     280,584,966
+*__Trainable parameters: 15,951,366
+*__Trainable ratio:      5.6850%
+✅ base_model.model: (8 params)
+✅ base_model.model.deberta.encoder.layer.0: (4 params)
+✅ base_model.model.deberta.encoder.layer.1: (4 params)
+✅ base_model.model.deberta.encoder.layer.10: (20 params)
+✅ base_model.model.deberta.encoder.layer.11: (20 params)
+✅ base_model.model.deberta.encoder.layer.2: (4 params)
+✅ base_model.model.deberta.encoder.layer.3: (4 params)
+✅ base_model.model.deberta.encoder.layer.4: (4 params)
+✅ base_model.model.deberta.encoder.layer.5: (4 params)
+✅ base_model.model.deberta.encoder.layer.6: (4 params)
+✅ base_model.model.deberta.encoder.layer.7: (4 params)
+✅ base_model.model.deberta.encoder.layer.8: (4 params)
+✅ base_model.model.deberta.encoder.layer.9: (4 params)

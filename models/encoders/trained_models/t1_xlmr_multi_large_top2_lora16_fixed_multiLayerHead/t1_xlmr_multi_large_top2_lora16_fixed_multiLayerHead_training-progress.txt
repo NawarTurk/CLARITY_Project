@@ -1,0 +1,62 @@
+Epoch  Progress%         ETA  Training Loss  Validation Loss   Accuracy   F1 Macro   F1 Micro
+---------------------------------------------------------------------------------------------
+    1       5.00      01m05s       1.098000         1.047407   0.587662   0.329962   0.587662
+    2      10.00      17m14s       1.057400         1.029473   0.340909   0.326695   0.340909
+    3      15.00      21m35s       0.977500         1.019372   0.561688   0.454510   0.561688
+    4      20.00      22m50s       0.862300         0.980049   0.428571   0.414866   0.428571
+    5      25.00      22m50s       0.792300         0.924643   0.626623   0.476735   0.626623
+    6      30.00      22m12s       0.715300         0.938768   0.603896   0.504457   0.603896
+    7      35.00      21m04s       0.655400         0.889335   0.610390   0.508519   0.610390
+    8      40.00      19m42s       0.602700         0.960997   0.571429   0.520871   0.571429
+    9      45.00      18m13s       0.545100         0.889007   0.636364   0.563890   0.636364
+   10      50.00      16m41s       0.528300         1.099086   0.662338   0.568520   0.662338
+   11      55.00      15m09s       0.468100         0.994994   0.535714   0.506556   0.535714
+   12      60.00      13m33s       0.461600         0.921628   0.542208   0.506876   0.542208
+   13      65.00      11m56s       0.409100         1.078653   0.551948   0.517764   0.551948
+   14      70.00      10m17s       0.385900         1.122801   0.584416   0.535957   0.584416
+   15      75.00      08m37s       0.362400         1.143214   0.607143   0.531600   0.607143
+
+[Final evaluation metrics]
+  eval_loss: 1.1432
+  eval_accuracy: 0.6071
+  eval_f1_macro: 0.5316
+  eval_f1_micro: 0.6071
+  eval_f1_weighted: 0.6181
+  eval_runtime: 3.6734
+  eval_samples_per_second: 83.8460
+  eval_steps_per_second: 5.4450
+  epoch: 15.0000
+  step: 3240
+
+[Layer freezing / trainable parameter summary]
+*_Head type: mlp (multiLayerHead)
+[Freeze] Embedding layer parameters frozen.
+*_Top-K unfreezing: top_k=2 (layers 22..23), total_layers=24
+*_Total parameters:     562,519,046
+*__Trainable parameters: 28,870,662
+*__Trainable ratio:      5.1324%
+✅ base_model.model: (8 params)
+✅ base_model.model.roberta.encoder.layer.0: (4 params)
+✅ base_model.model.roberta.encoder.layer.1: (4 params)
+✅ base_model.model.roberta.encoder.layer.10: (4 params)
+✅ base_model.model.roberta.encoder.layer.11: (4 params)
+✅ base_model.model.roberta.encoder.layer.12: (4 params)
+✅ base_model.model.roberta.encoder.layer.13: (4 params)
+✅ base_model.model.roberta.encoder.layer.14: (4 params)
+✅ base_model.model.roberta.encoder.layer.15: (4 params)
+✅ base_model.model.roberta.encoder.layer.16: (4 params)
+✅ base_model.model.roberta.encoder.layer.17: (4 params)
+✅ base_model.model.roberta.encoder.layer.18: (4 params)
+✅ base_model.model.roberta.encoder.layer.19: (4 params)
+✅ base_model.model.roberta.encoder.layer.2: (4 params)
+✅ base_model.model.roberta.encoder.layer.20: (4 params)
+✅ base_model.model.roberta.encoder.layer.21: (4 params)
+✅ base_model.model.roberta.encoder.layer.22: (20 params)
+✅ base_model.model.roberta.encoder.layer.23: (20 params)
+✅ base_model.model.roberta.encoder.layer.3: (4 params)
+✅ base_model.model.roberta.encoder.layer.4: (4 params)
+✅ base_model.model.roberta.encoder.layer.5: (4 params)
+✅ base_model.model.roberta.encoder.layer.6: (4 params)
+✅ base_model.model.roberta.encoder.layer.7: (4 params)
+✅ base_model.model.roberta.encoder.layer.8: (4 params)
+✅ base_model.model.roberta.encoder.layer.9: (4 params)
