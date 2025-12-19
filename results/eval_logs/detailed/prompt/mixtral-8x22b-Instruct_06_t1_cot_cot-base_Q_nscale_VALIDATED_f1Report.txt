@@ -1,0 +1,17 @@
+File: mixtral-8x22b-Instruct_06_t1_cot_cot-base_Q_nscale_VALIDATED.csv
+F1 Macro: 0.499
+F1 Micro: 0.623
+F1 Weighted: 0.625
+Accuracy: 0.623
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.729     0.743     0.736       206
+Clear Non-Reply      0.245     0.565     0.342        23
+    Clear Reply      0.578     0.329     0.419        79
+
+       accuracy                          0.623       308
+      macro avg      0.517     0.546     0.499       308
+   weighted avg      0.654     0.623     0.625       308
+

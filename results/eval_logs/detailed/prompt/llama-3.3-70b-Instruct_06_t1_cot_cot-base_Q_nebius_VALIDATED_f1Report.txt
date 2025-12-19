@@ -1,0 +1,17 @@
+File: llama-3.3-70b-Instruct_06_t1_cot_cot-base_Q_nebius_VALIDATED.csv
+F1 Macro: 0.424
+F1 Micro: 0.542
+F1 Weighted: 0.550
+Accuracy: 0.542
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.709     0.650     0.678       206
+Clear Non-Reply      0.192     0.826     0.311        23
+    Clear Reply      0.700     0.177     0.283        79
+
+       accuracy                          0.542       308
+      macro avg      0.534     0.551     0.424       308
+   weighted avg      0.668     0.542     0.550       308
+
