@@ -733,7 +733,7 @@ def _build_output_slug(model_name: str, param_mode: str) -> str:
         )
     meta = MODEL_METADATA[model_name]
     head_type = "defaultHead"
-    lora_tag = f"top{TOP_K_TRAINABLE_LAYERS}_lora{LORA_R}"
+    lora_tag = f"top{TOP_K_TRAINABLE_LAYERS}-lora{LORA_R}"
     slug = (
         f"{TASK_ID}_{meta['arch']}_{meta['lang']}_{meta['size']}"
         f"_{lora_tag}_{param_mode}_{head_type}"
