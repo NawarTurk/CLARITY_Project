@@ -1,0 +1,64 @@
+# Stage 3: final representation classification
+# Truncation + classification head will be fixed per model after Stage 2 analysis
+# Loss variants are explored for each final configuration
+
+stage: s3_representation_classification
+
+loss_functions:
+  - CE
+  - WCE
+
+dropout:
+  - true
+  - false
+
+runs:
+  - model: microsoft/deberta-v3-base
+    script: stage3_train_freeze.py
+    unfreeze_ratio: 0.25
+    truncation: TBD        # head | head_tail
+    classification_head: TBD   # default | mlp | avgpool
+
+  - model: microsoft/mdeberta-v3-base
+    script: stage3_train_lora.py
+    lora_rank: 16
+    lora_top_layers: 2
+    truncation: TBD
+    classification_head: TBD
+
+  - model: bert-base-uncased
+    script: stage3_train_lora.py
+    lora_rank: 16
+    truncation: TBD
+    classification_head: TBD
+
+  - model: bert-base-multilingual-cased
+    script: stage3_train_freeze.py
+    unfreeze_ratio: 0.25
+    truncation: TBD
+    classification_head: TBD
+
+  - model: roberta-base
+    script: stage3_train_freeze.py
+    unfreeze_ratio: 0.75
+    truncation: TBD
+    classification_head: TBD
+
+  - model: roberta-large
+    script: stage3_train_freeze.py
+    unfreeze_ratio: 0.25
+    truncation: TBD
+    classification_head: TBD
+
+  - model: FacebookAI/xlm-roberta-base
+    script: stage3_train_freeze.py
+    unfreeze_ratio: 0.25
+    truncation: TBD
+    classification_head: TBD
+
+  - model: FacebookAI/xlm-roberta-large
+    script: stage3_train_lora.py
+    lora_rank: 16
+    lora_top_layers: 2
+    truncation: TBD
+    classification_head: TBD
