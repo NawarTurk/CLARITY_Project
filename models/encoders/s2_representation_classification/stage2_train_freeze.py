@@ -984,9 +984,11 @@ def main():
             test_full_df = pd.read_csv(TEST_CSV_PATH)
             test_full_df = test_full_df.dropna(subset=[ARG1_KEY, ARG2_KEY, TARGET_COLUMN]).copy()
 
+
             slug = _build_output_slug(resolved_model, args.param_mode, args.head_type, unfreeze_ratio)
-            output_dir = os.path.join("results", "models", slug)
-            final_model_dir = os.path.join("models", "encoders", "trained_models", slug)
+            STAGE2_DIR = Path(__file__).resolve().parent
+            output_dir = STAGE2_DIR / "tmp_checkpoints" / slug
+            final_model_dir = STAGE2_DIR / "stage2_trained_models" / slug
 
             trainer, _, _, _ = train_model(
                 model_name=resolved_model,
