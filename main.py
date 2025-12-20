@@ -1,4 +1,5 @@
 import argparse
+from html import parser
 import subprocess
 import sys
 from pathlib import Path
@@ -64,6 +65,63 @@ def run_stage2_from_config():
                 print("\n[Stage 2] Running:", " ".join(cmd))
                 subprocess.run(cmd, check=True)
 
+def run_stage3_from_config():
+    project_root = Path(__file__).resolve().parent
+    config_path = project_root / "config" / "stage3.yaml"
+
+    if not config_path.exists():
+        raise FileNotFoundError(f"Missing config file: {config_path}")
+
+    with open(config_path, "r") as f:
+        cfg = yaml.safe_load(f)
+
+    loss_fns = cfg.get("loss_functions", [])
+    dropouts = cfg.get("dropout", [])
+
+    for run in cfg["runs"]:
+        script = (
+            project_root
+            / "models"
+            / "encoders"
+            / "s3_Loss_and_regularization"
+            / run["script"]
+        )
+
+        if not script.exists():
+            raise FileNotFoundError(f"Script not found: {script}")
+
+        trunc = run["truncation"]
+        head = run["classification_head"]
+
+        for loss_fn in loss_fns:
+            for use_dropout in dropouts:
+
+                 # Reason: CE + no-dropout was what was used in Stage 2
+                if loss_fn == "CE" and use_dropout is False:
+                    continue
+
+                cmd = [
+                    sys.executable,
+                    str(script),
+                    "--model_name", run["model"],
+                    "--truncation", trunc,
+                    "--head_type", head,
+                    "--loss_fn", loss_fn,
+                    "--dropout", str(use_dropout),
+                ]
+
+                # optional params
+                if "unfreeze_ratio" in run:
+                    cmd += ["--unfreeze_ratio", str(run["unfreeze_ratio"])]
+
+                if "lora_rank" in run:
+                    cmd += ["--lora_rank", str(run["lora_rank"])]
+
+                if "lora_top_layers" in run:
+                    cmd += ["--lora_top_layers", str(run["lora_top_layers"])]
+
+                print("\n[Stage 3] Running:", " ".join(cmd))
+                subprocess.run(cmd, check=True)
 
 
 def run_encoder_training(train_script: str, model_name: str, param_mode: str) -> None:
@@ -152,6 +210,18 @@ def main():
         help="Run Stage 2 predictions"
     )
 
+    parser.add_argument(
+        "--train-stage-3",
+        dest="train_stage_3",
+        action="store_true",
+    )
+
+    parser.add_argument(
+        "--predict-stage-3",
+        action="store_true",
+        help="Run Stage 3 predictions"
+    )
+
     args = parser.parse_args()
 
     if args.predict:
@@ -185,10 +255,21 @@ def main():
         run_stage2_from_config()
         return
     
+    if args.train_stage_3:
+        run_stage3_from_config()
+        return
+    
     if args.predict_stage_2:
         project_root = Path(__file__).resolve().parent
         script = project_root / "models" / "encoders" / "s2_representation_classification" / "stage2_predict.py"
         print("[Stage 2] Running prediction script:", script)
+        subprocess.run([sys.executable, str(script)], check=True)
+        return
+    
+    if args.predict_stage_3:
+        project_root = Path(__file__).resolve().parent
+        script = project_root / "models" / "encoders" / "s3_Loss_and_regularization" / "stage3_predict.py"
+        print("[Stage 3] Running prediction script:", script)
         subprocess.run([sys.executable, str(script)], check=True)
         return
 
