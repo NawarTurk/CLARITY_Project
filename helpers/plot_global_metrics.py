@@ -121,11 +121,16 @@ def main():
     if ENCODER_GLOBAL_CSV.exists():
         ENCODER_PLOTS_DIR.mkdir(parents=True, exist_ok=True)
         enc_df = pd.read_csv(ENCODER_GLOBAL_CSV)
-        enc_metrics = ["f1_macro", "f1_weighted", "accuracy"]
-        enc_groups = ["model_name", "arch", "lang", "size", "tune", "param_mode"]
+        enc_metrics = ["f1_macro", "f1_weighted"]
+        enc_groups = [ "arch", "lang", "size", "tune", "param_mode"]
 
         for group_col in enc_groups:
-            grouped = enc_df.groupby(group_col)[enc_metrics].mean().reset_index()
+            grouped = (
+                enc_df.groupby(group_col)[enc_metrics]
+                    .mean()
+                    .reset_index()
+                    .sort_values("f1_macro", ascending=False)
+            )
             long_df = grouped.melt(
                 id_vars=[group_col], value_vars=enc_metrics,
                 var_name="Metric", value_name="Score"
@@ -162,7 +167,12 @@ def main():
         # Freezing ratios
         freeze_df = enc_df[enc_df["tune"].str.startswith("freeze")]
         if not freeze_df.empty:
-            grouped = freeze_df.groupby("tune")[enc_metrics].mean().reset_index()
+            grouped = (
+                freeze_df.groupby("tune")[enc_metrics]
+                        .mean()
+                        .reset_index()
+                        .sort_values("f1_macro", ascending=False)
+            )
             long_df = grouped.melt(
                 id_vars=["tune"], value_vars=enc_metrics,
                 var_name="Metric", value_name="Score"

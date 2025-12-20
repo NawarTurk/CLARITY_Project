@@ -64,18 +64,35 @@ def process_encoder_predictions():
         f1_micro = f1_score(y_true, y_pred, average="micro")
         f1_weighted = f1_score(y_true, y_pred, average="weighted")
         accuracy = accuracy_score(y_true, y_pred)
-
-        model_name = f.stem
+        experiment_name = f.stem
         suffix = "_predictions"
-        if model_name.endswith(suffix):
-            model_name = model_name[: -len(suffix)]
-        parts = model_name.split("_")
-        if len(parts) < 6:
-            print(f"[Warn] Skipping {f.name}: unable to parse model metadata.")
+        if experiment_name.endswith(suffix):
+            experiment_name = experiment_name[: -len(suffix)]
+
+        parts = experiment_name.split("_")
+
+        # EXPECTED:
+        # task_arch_lang_size_tune_param_head_trunc_data_loss
+        if len(parts) < 10:
+            print(f"[Warn] Skipping {f.name}: unexpected filename format.")
             continue
-        task_id, arch, lang, size, tune, param_mode = parts[:6]
-        head_type = parts[6] if len(parts) >= 7 else "defaultHead"
-        report_basename = model_name if model_name.endswith(head_type) else f"{model_name}_{head_type}"
+
+        (
+            task_id,
+            arch,
+            lang,
+            size,
+            tune,
+            param_mode,
+            head_type,
+            truncation,
+            data_variant,
+            loss_type,
+        ) = parts[:10]
+
+        model_name = f"{arch}-{size}"
+
+        report_basename = experiment_name 
 
         report = classification_report(
             y_true,
@@ -101,14 +118,17 @@ def process_encoder_predictions():
         count += 1
 
         encoder_global_report.append({
-            "model_name": model_name,
+            "experiment": experiment_name,
             "task_id": task_id,
-            "arch": arch,
+            "model_name": model_name,
             "lang": lang,
             "size": size,
             "tune": tune,
             "param_mode": param_mode,
             "head_type": head_type,
+            "truncation": truncation,
+            "data_variant": data_variant,
+            "loss_type": loss_type,
             "f1_macro": f1_macro,
             "f1_micro": f1_micro,
             "f1_weighted": f1_weighted,

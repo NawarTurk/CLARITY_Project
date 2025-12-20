@@ -1,0 +1,18 @@
+Model: roberta-base
+Head Type: defaultHead
+F1 Macro: 0.612
+F1 Micro: 0.659
+F1 Weighted: 0.668
+Accuracy: 0.659
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.788     0.684     0.732       206
+Clear Non-Reply      0.517     0.652     0.577        23
+    Clear Reply      0.470     0.595     0.525        79
+
+       accuracy                          0.659       308
+      macro avg      0.592     0.644     0.612       308
+   weighted avg      0.686     0.659     0.668       308
+
