@@ -1,3 +1,10 @@
+import sys, os
+sys.path.append(
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+)
+
+from models.encoders.model_metadata import MODEL_METADATA
+
 import argparse
 import inspect
 import math
@@ -36,8 +43,6 @@ from transformers.modeling_outputs import SequenceClassifierOutput
 from transformers.utils import WEIGHTS_NAME, SAFE_WEIGHTS_NAME
 
 import matplotlib.pyplot as plt
-
-from model_metadata import MODEL_METADATA
 
 
 ALLOWED_MODEL_NAMES = [

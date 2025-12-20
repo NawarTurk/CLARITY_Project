@@ -1,3 +1,10 @@
+import sys, os
+sys.path.append(
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+)
+from models.encoders.model_metadata import MODEL_METADATA
+
+
 import argparse
 import inspect
 import math
@@ -39,7 +46,7 @@ try:
 except ImportError as e:
     raise ImportError("Missing dependency: peft. Install with `pip install -U peft`.") from e
 
-from model_metadata import MODEL_METADATA
+
 
 
 ALLOWED_MODEL_NAMES = [

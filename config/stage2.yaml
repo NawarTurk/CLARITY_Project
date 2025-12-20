@@ -1,0 +1,45 @@
+stage: s2_representation_classification
+
+truncation_modes:
+  - head
+  - head_tail
+
+classification_heads:
+  - default
+  - mlp
+  - avgpool
+
+runs:
+  - model: microsoft/deberta-v3-base
+    script: stage2_train_freeze.py
+    unfreeze_ratio: 0.25
+
+  - model: microsoft/mdeberta-v3-base
+    script: stage2_train_lora.py
+    lora_rank: 16
+    lora_top_layers: 2
+
+  - model: bert-base-uncased
+    script: stage2_train_lora.py
+    lora_rank: 16
+
+  - model: bert-base-multilingual-cased
+    script: stage2_train_freeze.py
+    unfreeze_ratio: 0.25
+
+  - model: roberta-base
+    script: stage2_train_freeze.py
+    unfreeze_ratio: 0.75
+
+  - model: roberta-large
+    script: stage2_train_freeze.py
+    unfreeze_ratio: 0.25
+
+  - model: FacebookAI/xlm-roberta-base
+    script: stage2_train_freeze.py
+    unfreeze_ratio: 0.25
+
+  - model: FacebookAI/xlm-roberta-large
+    script: stage2_train_lora.py
+    lora_rank: 16
+    lora_top_layers: 2

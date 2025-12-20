@@ -2,12 +2,48 @@ import argparse
 import subprocess
 import sys
 from pathlib import Path
-
+import yaml
 from helpers import generate_f1_report
 from helpers import plot_global_metrics
 from helpers import validate
 
 TRAINING_SCRIPTS = ("train_full", "train_freeze", "train_lora", "train_adapter")
+
+def run_stage2_from_config():
+    project_root = Path(__file__).resolve().parent
+    config_path = project_root / "config" / "stage2.yaml"
+
+    if not config_path.exists():
+        raise FileNotFoundError(f"Missing config file: {config_path}")
+
+    with open(config_path, "r") as f:
+        cfg = yaml.safe_load(f)
+
+    for run in cfg["runs"]:
+        script = project_root / "models" / "encoders" / "s2_representation_classification" / run["script"]
+
+        if not script.exists():
+            raise FileNotFoundError(f"Script not found: {script}")
+
+        cmd = [
+            sys.executable,
+            str(script),
+            "--model_name", run["model"],
+            "--param_mode", "fixed",
+        ]
+
+        # optional params
+        if "unfreeze_ratio" in run:
+            cmd += ["--unfreeze_ratio", str(run["unfreeze_ratio"])]
+
+        if "lora_rank" in run:
+            cmd += ["--lora_rank", str(run["lora_rank"])]
+
+        if "lora_top_layers" in run:
+            cmd += ["--lora_top_layers", str(run["lora_top_layers"])]
+
+        print("\n[Stage 2] Running:", " ".join(cmd))
+        subprocess.run(cmd, check=True)
 
 
 def run_encoder_training(train_script: str, model_name: str, param_mode: str) -> None:
@@ -85,6 +121,16 @@ def main():
         type=str,
         help="Run encoder prediction for a trained model folder name",
     )
+    parser.add_argument(
+        "--train-stage-2",
+        dest="train_stage_2",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--predict-stage-2",
+        action="store_true",
+        help="Run Stage 2 predictions"
+    )
 
     args = parser.parse_args()
 
@@ -114,6 +160,17 @@ def main():
     elif args.plot:
         print("Generating Plots ...")
         plot_global_metrics.main()
+
+    if args.train_stage_2:
+        run_stage2_from_config()
+        return
+    
+    if args.predict_stage_2:
+        project_root = Path(__file__).resolve().parent
+        script = project_root / "models" / "encoders" / "s2_representation_classification" / "stage2_predict.py"
+        print("[Stage 2] Running prediction script:", script)
+        subprocess.run([sys.executable, str(script)], check=True)
+        return
 
 
 if __name__ == "__main__":
