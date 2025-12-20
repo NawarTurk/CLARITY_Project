@@ -19,31 +19,51 @@ def run_stage2_from_config():
     with open(config_path, "r") as f:
         cfg = yaml.safe_load(f)
 
+    truncations = cfg.get("truncation_modes", [])
+    heads = cfg.get("classification_heads", [])
+
     for run in cfg["runs"]:
-        script = project_root / "models" / "encoders" / "s2_representation_classification" / run["script"]
+        script = (
+            project_root
+            / "models"
+            / "encoders"
+            / "s2_representation_classification"
+            / run["script"]
+        )
 
         if not script.exists():
             raise FileNotFoundError(f"Script not found: {script}")
 
-        cmd = [
-            sys.executable,
-            str(script),
-            "--model_name", run["model"],
-            "--param_mode", "fixed",
-        ]
+        for trunc in truncations:
+            for head in heads:
 
-        # optional params
-        if "unfreeze_ratio" in run:
-            cmd += ["--unfreeze_ratio", str(run["unfreeze_ratio"])]
+                # TODO: REMOVE THIS SKIP AFTER ALL HEAD-TRUNCATION EXPERIMENTS ARE FINISHED
+                # Reason: truncation="head" has already been fully trained
+                if trunc == "head":
+                    continue
 
-        if "lora_rank" in run:
-            cmd += ["--lora_rank", str(run["lora_rank"])]
+                cmd = [
+                    sys.executable,
+                    str(script),
+                    "--model_name", run["model"],
+                    "--param_mode", "fixed",
+                    "--head_type", head,
+                    "--truncation", trunc,
+                ]
 
-        if "lora_top_layers" in run:
-            cmd += ["--lora_top_layers", str(run["lora_top_layers"])]
+                # optional params
+                if "unfreeze_ratio" in run:
+                    cmd += ["--unfreeze_ratio", str(run["unfreeze_ratio"])]
 
-        print("\n[Stage 2] Running:", " ".join(cmd))
-        subprocess.run(cmd, check=True)
+                if "lora_rank" in run:
+                    cmd += ["--lora_rank", str(run["lora_rank"])]
+
+                if "lora_top_layers" in run:
+                    cmd += ["--lora_top_layers", str(run["lora_top_layers"])]
+
+                print("\n[Stage 2] Running:", " ".join(cmd))
+                subprocess.run(cmd, check=True)
+
 
 
 def run_encoder_training(train_script: str, model_name: str, param_mode: str) -> None:
