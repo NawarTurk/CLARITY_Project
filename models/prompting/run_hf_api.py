@@ -24,10 +24,6 @@ MODEL_REGISTRY = {
     # ---- Mixtral ---- 
     "mixtral-8x22b-Instruct": ("mistralai/Mixtral-8x22B-Instruct-v0.1", 'nscale'),  
     # "mixtral-8x7b-Instruct": ("mistralai/Mixtral-8x7B-Instruct-v0.1", 'together'), no longer working
-    # ---- ther models ---- 
-    # "gpt-oss-120b": "openai/gpt-oss-120b",  # returning empty replies  
-    # "phi-2.7b":   "microsoft/phi-2",
-    # "falcon-7b":  "tiiuae/falcon-7b-instruct",
 }
 
 # ---- configuration ----

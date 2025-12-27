@@ -1,0 +1,17 @@
+File: qwen3-32b-instruct_21_t1_agentic_voting_Q_nebius_VALIDATED.csv
+F1 Macro: 0.416
+F1 Micro: 0.445
+F1 Weighted: 0.462
+Accuracy: 0.445
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.758     0.364     0.492       206
+Clear Non-Reply      0.241     0.565     0.338        23
+    Clear Reply      0.316     0.620     0.419        79
+
+       accuracy                          0.445       308
+      macro avg      0.438     0.517     0.416       308
+   weighted avg      0.606     0.445     0.462       308
+

@@ -6,7 +6,7 @@ PREDICTION_DIR = Path(__file__).resolve().parents[1] / "results" / "predictions"
 TARGET_COLUMN = "clarity_label"
 MODEL_PREDICTION_COLUMN = "model_prediction"
 OUTPUT_DIR = Path(__file__).resolve().parents[1] / "results" / "eval_logs" / "detailed" / "prompt"
-GLOBAL_REPORT_DIR = Path(__file__).resolve().parents[1] / "results" / "eval_logs" / "global"
+GLOBAL_REPORT_DIR = Path(__file__).resolve().parents[1] / "results" 
 
 ENCODER_PREDICTION_DIR = Path(__file__).resolve().parents[1] / "results" / "predictions" / "detailed" / "encoder"
 ENCODER_OUTPUT_DIR = Path(__file__).resolve().parents[1] / "results" / "eval_logs" / "detailed" / "encoder"
