@@ -16,14 +16,14 @@ import re
 # ---------------- CONFIG ----------------
 
 ENSEMBLE_FILES = [
-    "t1_deberta_en_base_unfreezing25_fixed_defaultHead_predictions.csv",
-    "t1_mdeberta_multi_base_top2-lora16_fixed_defaultHead_predictions.csv",
-    "t1_bert_en_base_lora16_fixed_defaultHead_predictions.csv",
-    "t1_mbert_multi_base_unfreezing25_fixed_defaultHead_predictions.csv",
-    "t1_roberta_en_base_unfreezing75_fixed_defaultHead_predictions.csv",
-    "t1_roberta_en_large_unfreezing25_fixed_defaultHead_predictions.csv",
-    "t1_xlmr_multi_base_unfreezing25_fixed_defaultHead_predictions.csv",
-    "t1_xlmr_multi_large_top2-lora16_fixed_defaultHead_predictions.csv",
+    "t1_deberta_en_base_unfreezing25_fixed_defaultHead_originalData_truncHead_lossCE_predictions.csv",
+    "t1_mdeberta_multi_base_unfreezing25_fixed_defaultHead_originalData_truncHead_lossCE_predictions.csv",
+    "t1_bert_en_base_lora16_fixed_defaultHead_originalData_truncHead_lossCE_predictions.csv",
+    "t1_mbert_multi_base_unfreezing25_fixed_defaultHead_originalData_truncHead_lossCE_predictions.csv",
+    "t1_roberta_en_base_unfreezing75_fixed_defaultHead_originalData_truncHead_lossCE_predictions.csv",
+    "t1_roberta_en_large_unfreezing25_fixed_defaultHead_originalData_truncHead_lossCE_predictions.csv",
+    "t1_xlmr_multi_base_unfreezing25_fixed_defaultHead_originalData_truncHead_lossCE_predictions.csv",
+    "t1_xlmr_multi_large_unfreezing25_fixed_defaultHead_originalData_truncHead_lossCE_predictions.csv",
 ]
 
 ID_COL = "index"

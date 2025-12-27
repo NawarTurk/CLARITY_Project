@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
 
-GLOBAL_REPORT_DIR = Path(__file__).resolve().parents[1] / "results" / "eval_logs" / "global"
+GLOBAL_REPORT_DIR = Path(__file__).resolve().parents[1] / "results" 
 PLOTS_DIR = Path(__file__).resolve().parents[1] / "results" /  "plots" / "prompt"
 ENCODER_PLOTS_DIR = Path(__file__).resolve().parents[1] / "results" / "plots" / "encoder"
 ENCODER_GLOBAL_CSV = GLOBAL_REPORT_DIR / "encoder_f1_global_summary.csv"
@@ -122,7 +122,9 @@ def main():
         ENCODER_PLOTS_DIR.mkdir(parents=True, exist_ok=True)
         enc_df = pd.read_csv(ENCODER_GLOBAL_CSV)
         enc_metrics = ["f1_macro", "f1_weighted"]
-        enc_groups = [ "arch", "lang", "size", "tune", "param_mode"]
+        # enc_groups = [ "arch", "lang", "size", "tune", "param_mode"]
+        enc_groups = [ "lang", "size", "tune", "param_mode"]
+
 
         for group_col in enc_groups:
             grouped = (
