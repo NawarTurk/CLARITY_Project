@@ -1,0 +1,50 @@
+Epoch  Progress%         ETA  Training Loss  Validation Loss   Accuracy   F1 Macro   F1 Micro
+---------------------------------------------------------------------------------------------
+    1       5.00      00m20s       1.075900         1.046349   0.243506   0.233845   0.243506
+    2      10.00      05m56s       1.067100         1.037216   0.275974   0.262592   0.275974
+    3      15.00      07m26s       0.987400         1.002527   0.292208   0.299988   0.292208
+    4      20.00      07m41s       0.886300         0.971701   0.298701   0.308491   0.298701
+    5      25.00      07m34s       0.860200         1.127533   0.516234   0.332765   0.516234
+    6      30.00      07m16s       0.906600         0.927794   0.623377   0.405393   0.623377
+    7      35.00      06m55s       0.827900         0.955043   0.662338   0.465480   0.662338
+    8      40.00      06m30s       0.776900         1.117772   0.642857   0.490020   0.642857
+    9      45.00      06m02s       0.728200         0.958432   0.594156   0.545069   0.594156
+   10      50.00      05m33s       0.670700         1.012656   0.678571   0.525785   0.678571
+   11      55.00      05m02s       0.592400         0.967423   0.668831   0.579117   0.668831
+   12      60.00      04m30s       0.519500         1.043137   0.629870   0.544151   0.629870
+   13      65.00      03m57s       0.466900         1.170578   0.629870   0.537452   0.629870
+   14      70.00      03m24s       0.408300         1.201126   0.590909   0.535634   0.590909
+   15      75.00      02m51s       0.352800         1.269711   0.610390   0.532271   0.610390
+   16      80.00      02m18s       0.316400         1.486856   0.610390   0.533146   0.610390
+
+[Final evaluation metrics]
+  eval_loss: 0.9674
+  eval_accuracy: 0.6688
+  eval_f1_macro: 0.5791
+  eval_f1_micro: 0.6688
+  eval_f1_weighted: 0.6757
+  eval_runtime: 1.0533
+  eval_samples_per_second: 292.4060
+  eval_steps_per_second: 18.9870
+  epoch: 16.0000
+  step: 3456
+
+[Layer freezing / trainable parameter summary]
+[Freeze] Embedding layer parameters frozen.
+*_Total encoder layers: 12
+*_Unfreezing from layer 3 to 11
+*_Total parameters:     125,238,531
+*__Trainable parameters: 64,974,339
+*__Trainable ratio:      51.88%
+✅ base_model.encoder.layer.10: (16 params)
+✅ base_model.encoder.layer.11: (16 params)
+✅ base_model.encoder.layer.3: (16 params)
+✅ base_model.encoder.layer.4: (16 params)
+✅ base_model.encoder.layer.5: (16 params)
+✅ base_model.encoder.layer.6: (16 params)
+✅ base_model.encoder.layer.7: (16 params)
+✅ base_model.encoder.layer.8: (16 params)
+✅ base_model.encoder.layer.9: (16 params)
+✅ base_model.pooler: (2 params)
+✅ classifier.fc1: (2 params)
+✅ classifier.fc2: (2 params)
