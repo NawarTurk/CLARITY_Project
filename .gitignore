@@ -18,6 +18,16 @@ __pycache__/
 !/models/encoders/trained_models/**/*_training-progress.txt
 # (or, if your file is exactly named training-progress.txt)
 # !/models/encoders/trained_models/**/training-progress.txt
+
+# Ignore all stage 2 saved models/artifacts
+/models/encoders/s2_representation_classification/stage2_trained_models/**
+
+# but keep directories so we can re-include files inside them
+!/models/encoders/s2_representation_classification/stage2_trained_models/**/
+
+# Keep only stage 2 training progress logs
+!/models/encoders/s2_representation_classification/stage2_trained_models/**/*_training-progress.txt
+#!/models/encoders/s2_representation_classification/stage2_trained_models/**/training-progress.txt
 results/models
 
 temp_scripts/

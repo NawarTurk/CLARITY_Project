@@ -18,5 +18,10 @@ for f in PRED_DIR.glob(f"*{PRED_SUFFIX}"):
         f"{TAG}{PRED_SUFFIX}"
     )
 
-    f.rename(f.with_name(new_name))
+    target = f.with_name(new_name)
+    if target.exists():
+        print(f"[SKIP-EXISTS] {name} -> {new_name} (target already exists)")
+        continue
+
+    f.rename(target)
     print(f"[RENAMED] {name} -> {new_name}")
