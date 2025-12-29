@@ -1,0 +1,18 @@
+Model: roberta-base
+Head Type: avgPoolHead
+F1 Macro: 0.582
+F1 Micro: 0.633
+F1 Weighted: 0.648
+Accuracy: 0.633
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.823     0.631     0.714       206
+Clear Non-Reply      0.355     0.957     0.518        23
+    Clear Reply      0.489     0.544     0.515        79
+
+       accuracy                          0.633       308
+      macro avg      0.555     0.711     0.582       308
+   weighted avg      0.702     0.633     0.648       308
+
