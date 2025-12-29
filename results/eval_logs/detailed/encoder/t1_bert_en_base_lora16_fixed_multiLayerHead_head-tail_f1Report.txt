@@ -1,0 +1,18 @@
+Model: bert-base
+Head Type: multiLayerHead
+F1 Macro: 0.614
+F1 Micro: 0.662
+F1 Weighted: 0.672
+Accuracy: 0.662
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.800     0.680     0.735       206
+Clear Non-Reply      0.485     0.696     0.571        23
+    Clear Reply      0.480     0.608     0.536        79
+
+       accuracy                          0.662       308
+      macro avg      0.588     0.661     0.614       308
+   weighted avg      0.694     0.662     0.672       308
+
