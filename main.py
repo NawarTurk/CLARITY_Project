@@ -56,12 +56,6 @@ def run_stage2_from_config():
                 if "unfreeze_ratio" in run:
                     cmd += ["--unfreeze_ratio", str(run["unfreeze_ratio"])]
 
-                if "lora_rank" in run:
-                    cmd += ["--lora_rank", str(run["lora_rank"])]
-
-                if "lora_top_layers" in run:
-                    cmd += ["--lora_top_layers", str(run["lora_top_layers"])]
-
                 print("\n[Stage 2] Running:", " ".join(cmd))
                 subprocess.run(cmd, check=True)
 
@@ -263,7 +257,8 @@ def main():
         project_root = Path(__file__).resolve().parent
         script = project_root / "models" / "encoders" / "s2_representation_classification" / "stage2_predict.py"
         print("[Stage 2] Running prediction script:", script)
-        subprocess.run([sys.executable, str(script)], check=True)
+        # By default, run predictions for all Stage 2 trained models.
+        subprocess.run([sys.executable, str(script), "--model_dir", "all"], check=True)
         return
     
     if args.predict_stage_3:

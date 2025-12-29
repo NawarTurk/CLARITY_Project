@@ -34,6 +34,7 @@ from transformers import (
     AutoConfig,
     AutoModel,
     AutoTokenizer,
+    AutoModelForSequenceClassification,
     EarlyStoppingCallback,
     Trainer,
     TrainingArguments,
@@ -104,6 +105,7 @@ def _build_output_slug(
     param_mode: str,
     head_type: str,
     unfreeze_ratio: Optional[float] = None,
+    truncation: Optional[str] = None,
 ) -> str:
     if model_name not in MODEL_METADATA:
         raise KeyError(
@@ -112,15 +114,26 @@ def _build_output_slug(
         )
     meta = MODEL_METADATA[model_name]
     head_tag = HEAD_TAGS.get(head_type, head_type)
+    raw_trunc = (truncation or "").strip()
+    if raw_trunc == "head_tail":
+        trunc_tag = "head-tail"
+    elif raw_trunc:
+        trunc_tag = raw_trunc
+    else:
+        trunc_tag = "notrunc"
 
     pct = int(round(100 * float(unfreeze_ratio))) if unfreeze_ratio is not None else None
     strategy_tag = f"unfreezing{pct}" if pct is not None else TUNE_STRATEGY
 
     slug = (
         f"{TASK_ID}_{meta['arch']}_{meta['lang']}_{meta['size']}"
-        f"_{strategy_tag}_{param_mode}_{head_tag}"
+        f"_{strategy_tag}_{param_mode}_{head_tag}_{trunc_tag}"
     )
     return _fs_safe_model_name(slug)
+
+
+# Extend head tags to include Hugging Face's default classification head.
+HEAD_TAGS = {**HEAD_TAGS, "default": "defaultHead"}
 
 
 def _resolve_model_name(user_name: str) -> str:
@@ -772,7 +785,8 @@ def train_model(
     weight_decay: float,
     unfreeze_ratio: float,
     head_type: str,
-):
+    truncation: str = "head",
+) -> None:
     # Encode labels
     unique_labels = sorted(train_df[label_col].dropna().unique())
     label2id: Dict[str, int] = {lab: i for i, lab in enumerate(unique_labels)}
@@ -796,13 +810,75 @@ def train_model(
         tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
 
     def tokenize(batch):
-        return tokenizer(
+        # Default: standard truncation
+        if truncation != "head_tail":
+            return tokenizer(
+                batch[arg1_key],
+                batch[arg2_key],
+                truncation=True,
+                padding=True,
+                max_length=MAX_LENGTH,
+            )
+
+        # head_tail: keep first 256 and last 256 tokens for long sequences
+        inputs = tokenizer(
             batch[arg1_key],
             batch[arg2_key],
-            truncation=True,
-            padding=True,
-            max_length=MAX_LENGTH,
+            truncation=False,
+            padding=False,
+            return_attention_mask=True,
         )
+
+        input_ids_list = inputs["input_ids"]
+        attn_list = inputs["attention_mask"]
+        type_ids_list = inputs.get("token_type_ids")
+
+        head_len = MAX_LENGTH // 2
+        tail_len = MAX_LENGTH - head_len
+
+        new_input_ids = []
+        new_attn = []
+        new_type_ids = [] if type_ids_list is not None else None
+
+        for i in range(len(input_ids_list)):
+            ids = input_ids_list[i]
+            mask = attn_list[i]
+
+            # Short sequences: keep as-is
+            if len(ids) <= MAX_LENGTH:
+                new_input_ids.append(ids)
+                new_attn.append(mask)
+                if new_type_ids is not None:
+                    new_type_ids.append(type_ids_list[i])
+                continue
+
+            # Long sequences: take head and tail
+            head_ids = ids[:head_len]
+            tail_ids = ids[-tail_len:]
+            head_mask = mask[:head_len]
+            tail_mask = mask[-tail_len:]
+
+            truncated_ids = head_ids + tail_ids
+            truncated_mask = head_mask + tail_mask
+
+            new_input_ids.append(truncated_ids)
+            new_attn.append(truncated_mask)
+
+            if new_type_ids is not None:
+                t_ids = type_ids_list[i]
+                new_type_ids.append(t_ids[:head_len] + t_ids[-tail_len:])
+
+        encoded = {"input_ids": new_input_ids, "attention_mask": new_attn}
+        if new_type_ids is not None:
+            encoded["token_type_ids"] = new_type_ids
+
+        padded = tokenizer.pad(
+            encoded,
+            padding="max_length",
+            max_length=MAX_LENGTH,
+            return_tensors=None,
+        )
+        return padded
 
     train_ds = Dataset.from_pandas(train_df, preserve_index=False).map(tokenize, batched=True)
     dev_ds = Dataset.from_pandas(dev_df, preserve_index=False).map(tokenize, batched=True)
@@ -824,14 +900,24 @@ def train_model(
     if dev_remove:
         dev_ds = dev_ds.remove_columns(dev_remove)
 
-    # Model (AutoModel backbone + chosen head)
-    model = CLSHeadSequenceClassifier(
-        model_name=model_name,
-        num_labels=len(unique_labels),
-        id2label=id2label,
-        label2id=label2id,
-        head_type=head_type,
-    )
+    # Model (either HF default head or custom CLS head)
+    if head_type == "default":
+        # Use Hugging Face's standard classification head, matching Stage 1
+        model = AutoModelForSequenceClassification.from_pretrained(
+            model_name,
+            num_labels=len(unique_labels),
+            id2label=id2label,
+            label2id=label2id,
+        )
+    else:
+        # Custom CLS architecture (mlp / avgpool)
+        model = CLSHeadSequenceClassifier(
+            model_name=model_name,
+            num_labels=len(unique_labels),
+            id2label=id2label,
+            label2id=label2id,
+            head_type=head_type,
+        )
 
     # Apply partial unfreezing and capture summary lines
     freeze_summary_lines = apply_partial_unfreezing(model, unfreeze_ratio)
@@ -947,7 +1033,7 @@ def main():
     parser.add_argument(
         "--head_type",
         default="mlp",
-        choices=("mlp", "avgpool"),
+        choices=("default", "mlp", "avgpool"),
         help="mlp = CLS→Dropout→Linear→GELU→Dropout→Linear | avgpool = masked mean pool→Linear",
     )
     parser.add_argument(
@@ -955,6 +1041,12 @@ def main():
         type=float,
         default=None,
         help="Run only one ratio (e.g., 0.25 / 0.50 / 0.75). If omitted, runs (0.25, 0.50, 0.75).",
+    )
+    parser.add_argument(
+        "--truncation",
+        default="head",
+        choices=("head", "head_tail"),
+        help="Truncation strategy label used for naming/checkpointing.",
     )
     args = parser.parse_args()
 
@@ -970,7 +1062,8 @@ def main():
         for unfreeze_ratio in unfreeze_ratios:
             print(
                 f"\n[Run] Training {resolved_model} "
-                f"(head_type={args.head_type}, unfreeze_ratio={unfreeze_ratio:.2f}), mode={args.param_mode}"
+                f"(head_type={args.head_type}, truncation={args.truncation}, "
+                f"unfreeze_ratio={unfreeze_ratio:.2f}), mode={args.param_mode}"
             )
 
             train_full_df = pd.read_csv(TRAIN_CSV_PATH)
@@ -984,8 +1077,13 @@ def main():
             test_full_df = pd.read_csv(TEST_CSV_PATH)
             test_full_df = test_full_df.dropna(subset=[ARG1_KEY, ARG2_KEY, TARGET_COLUMN]).copy()
 
-
-            slug = _build_output_slug(resolved_model, args.param_mode, args.head_type, unfreeze_ratio)
+            slug = _build_output_slug(
+                resolved_model,
+                args.param_mode,
+                args.head_type,
+                unfreeze_ratio,
+                args.truncation,
+            )
             STAGE2_DIR = Path(__file__).resolve().parent
             output_dir = STAGE2_DIR / "tmp_checkpoints" / slug
             final_model_dir = STAGE2_DIR / "stage2_trained_models" / slug
@@ -1005,6 +1103,7 @@ def main():
                 weight_decay=config["weight_decay"],
                 unfreeze_ratio=unfreeze_ratio,
                 head_type=args.head_type,
+                truncation=args.truncation,
             )
 
             eval_metrics = getattr(trainer, "last_eval_metrics", None) or trainer.evaluate()

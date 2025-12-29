@@ -296,8 +296,12 @@ def _patch_seqcls_head(model: nn.Module, head_type: str) -> None:
     while ensuring behavior matches your desired CLS strategy.
     """
     head_type = (head_type or "mlp").strip().lower()
+    if head_type == "default":
+        # Keep the HF default classification head; just record type for metadata.
+        setattr(model, "head_type", "default")
+        return
     if head_type not in ("mlp", "avgpool"):
-        raise ValueError(f"Unsupported --head_type '{head_type}'. Use 'mlp' or 'avgpool'.")
+        raise ValueError(f"Unsupported --head_type '{head_type}'. Use 'mlp', 'avgpool', or 'default'.")
 
     hidden_size = int(getattr(getattr(model, "config", None), "hidden_size", 0) or 0)
     if hidden_size <= 0:
@@ -549,7 +553,7 @@ def _trainable_summary_lines(model: nn.Module) -> list[str]:
 # -----------------------------------------------------------------------------
 # Output naming
 # -----------------------------------------------------------------------------
-def _build_output_slug(model_name: str, param_mode: str, head_type: str) -> str:
+def _build_output_slug(model_name: str, param_mode: str, head_type: str, truncation: str | None = None) -> str:
     if model_name not in MODEL_METADATA:
         raise KeyError(
             f"Model '{model_name}' missing from MODEL_METADATA. "
@@ -558,11 +562,18 @@ def _build_output_slug(model_name: str, param_mode: str, head_type: str) -> str:
     meta = MODEL_METADATA[model_name]
 
     head_tag = HEAD_TAGS.get(head_type, head_type)
+    raw_trunc = (truncation or "").strip()
+    if raw_trunc == "head_tail":
+        trunc_tag = "head-tail"
+    elif raw_trunc:
+        trunc_tag = raw_trunc
+    else:
+        trunc_tag = "notrunc"
     lora_tag = f"lora{LORA_R}"
 
     slug = (
         f"{TASK_ID}_{meta['arch']}_{meta['lang']}_{meta['size']}"
-        f"_{lora_tag}_{param_mode}_{head_tag}"
+        f"_{lora_tag}_{param_mode}_{head_tag}_{trunc_tag}"
     )
     return _fs_safe_model_name(slug)
 
@@ -848,7 +859,8 @@ def train_model(
     num_epochs: int,
     weight_decay: float,
     head_type: str,
-):
+    truncation: str = "head",
+) -> None:
     # Encode labels
     unique_labels = sorted(train_df[label_col].dropna().unique())
     label2id: Dict[str, int] = {lab: i for i, lab in enumerate(unique_labels)}
@@ -872,13 +884,75 @@ def train_model(
         tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
 
     def tokenize(batch):
-        return tokenizer(
+        # Default: standard truncation
+        if truncation != "head_tail":
+            return tokenizer(
+                batch[arg1_key],
+                batch[arg2_key],
+                truncation=True,
+                padding=True,
+                max_length=MAX_LENGTH,
+            )
+
+        # head_tail: keep first 256 and last 256 tokens for long sequences
+        inputs = tokenizer(
             batch[arg1_key],
             batch[arg2_key],
-            truncation=True,
-            padding=True,
-            max_length=MAX_LENGTH,
+            truncation=False,
+            padding=False,
+            return_attention_mask=True,
         )
+
+        input_ids_list = inputs["input_ids"]
+        attn_list = inputs["attention_mask"]
+        type_ids_list = inputs.get("token_type_ids")
+
+        head_len = MAX_LENGTH // 2
+        tail_len = MAX_LENGTH - head_len
+
+        new_input_ids = []
+        new_attn = []
+        new_type_ids = [] if type_ids_list is not None else None
+
+        for i in range(len(input_ids_list)):
+            ids = input_ids_list[i]
+            mask = attn_list[i]
+
+            # Short sequences: keep as-is
+            if len(ids) <= MAX_LENGTH:
+                new_input_ids.append(ids)
+                new_attn.append(mask)
+                if new_type_ids is not None:
+                    new_type_ids.append(type_ids_list[i])
+                continue
+
+            # Long sequences: take head and tail
+            head_ids = ids[:head_len]
+            tail_ids = ids[-tail_len:]
+            head_mask = mask[:head_len]
+            tail_mask = mask[-tail_len:]
+
+            truncated_ids = head_ids + tail_ids
+            truncated_mask = head_mask + tail_mask
+
+            new_input_ids.append(truncated_ids)
+            new_attn.append(truncated_mask)
+
+            if new_type_ids is not None:
+                t_ids = type_ids_list[i]
+                new_type_ids.append(t_ids[:head_len] + t_ids[-tail_len:])
+
+        encoded = {"input_ids": new_input_ids, "attention_mask": new_attn}
+        if new_type_ids is not None:
+            encoded["token_type_ids"] = new_type_ids
+
+        padded = tokenizer.pad(
+            encoded,
+            padding="max_length",
+            max_length=MAX_LENGTH,
+            return_tensors=None,
+        )
+        return padded
 
     train_ds = Dataset.from_pandas(train_df, preserve_index=False).map(tokenize, batched=True)
     dev_ds = Dataset.from_pandas(dev_df, preserve_index=False).map(tokenize, batched=True)
@@ -1055,6 +1129,12 @@ def train_model(
 def main():
     parser = argparse.ArgumentParser(description="LoRA fine-tuning with selectable CLS strategy (mlp / avgpool).")
     parser.add_argument(
+        "--truncation",
+        default="head",
+        choices=("head", "head_tail"),
+        help="Truncation strategy label used for naming/checkpointing.",
+    )
+    parser.add_argument(
         "--model_name",
         required=True,
         help="Base HF model key (e.g., xlmr, roberta, mbert, deberta) or 'all' to train every listed model.",
@@ -1063,7 +1143,7 @@ def main():
     parser.add_argument(
         "--head_type",
         default="mlp",
-        choices=("mlp", "avgpool"),
+        choices=("default", "mlp", "avgpool"),
         help="mlp = CLS→Dropout→Linear→GELU→Dropout→Linear | avgpool = masked mean pool→Linear",
     )
     args = parser.parse_args()
@@ -1072,7 +1152,10 @@ def main():
     config = FIXED_CONFIG
 
     for resolved_model in model_names:
-        print(f"\n[Run] Training {resolved_model} with LoRA (head_type={args.head_type}), mode={args.param_mode}")
+        print(
+            f"\n[Run] Training {resolved_model} with LoRA "
+            f"(head_type={args.head_type}, truncation={args.truncation}), mode={args.param_mode}"
+        )
 
         train_full_df = pd.read_csv(TRAIN_CSV_PATH)
         train_full_df = train_full_df.dropna(subset=[ARG1_KEY, ARG2_KEY, TARGET_COLUMN]).copy()
@@ -1085,7 +1168,7 @@ def main():
         test_full_df = pd.read_csv(TEST_CSV_PATH)
         test_full_df = test_full_df.dropna(subset=[ARG1_KEY, ARG2_KEY, TARGET_COLUMN]).copy()
 
-        slug = _build_output_slug(resolved_model, args.param_mode, args.head_type)
+        slug = _build_output_slug(resolved_model, args.param_mode, args.head_type, args.truncation)
         STAGE2_DIR = Path(__file__).resolve().parent
         output_dir = STAGE2_DIR / "tmp_checkpoints" / slug
         final_model_dir = STAGE2_DIR / "stage2_trained_models" / slug
@@ -1104,6 +1187,7 @@ def main():
             num_epochs=config["num_train_epochs"],
             weight_decay=config["weight_decay"],
             head_type=args.head_type,
+            truncation=args.truncation,
         )
 
         eval_metrics = trainer.evaluate()

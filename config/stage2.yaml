@@ -6,26 +6,26 @@ truncation_modes:
 
 classification_heads:
   - default
-  - mlp
+ - mlp
   - avgpool
 
 runs:
-  - model: microsoft/deberta-v3-base
-    script: stage2_train_freeze.py
-    unfreeze_ratio: 0.25
-    lang: en
-
-  - model: microsoft/mdeberta-v3-base
-    script: stage2_train_lora.py
-    unfreeze_ratio: 0.25
-    lang: multi
-
   - model: bert-base-uncased
     script: stage2_train_lora.py
     lora_rank: 16
     lang: en
 
   - model: bert-base-multilingual-cased
+    script: stage2_train_freeze.py
+    unfreeze_ratio: 0.25
+    lang: multi
+
+  - model: microsoft/deberta-v3-base
+    script: stage2_train_freeze.py
+    unfreeze_ratio: 0.25
+    lang: en
+
+  - model: microsoft/mdeberta-v3-base
     script: stage2_train_freeze.py
     unfreeze_ratio: 0.25
     lang: multi
@@ -46,6 +46,6 @@ runs:
     lang: multi
 
   - model: FacebookAI/xlm-roberta-large
-    script: stage2_train_lora.py
+    script: stage2_train_freeze.py
     unfreeze_ratio: 0.25
     lang: multi
