@@ -1,0 +1,47 @@
+Epoch  Progress%         ETA  Training Loss  Validation Loss   Accuracy   F1 Macro   F1 Micro
+---------------------------------------------------------------------------------------------
+    1       5.00      00m54s       1.098400         1.089733   0.233766   0.208627   0.233766
+    2      10.00      09m51s       1.089600         1.193132   0.188312   0.186671   0.188312
+    3      15.00      12m08s       1.044600         1.059199   0.269481   0.251175   0.269481
+    4      20.00      12m51s       0.987000         1.062571   0.272727   0.238110   0.272727
+    5      25.00      12m47s       0.951500         0.943762   0.295455   0.304508   0.295455
+    6      30.00      12m24s       0.902100         0.967919   0.691558   0.521576   0.691558
+    7      35.00      11m49s       0.913600         1.012909   0.659091   0.482026   0.659091
+    8      40.00      11m07s       0.869200         0.950442   0.649351   0.546659   0.649351
+    9      45.00      10m22s       0.847000         0.974306   0.701299   0.525946   0.701299
+   10      50.00      09m32s       0.828300         0.961431   0.694805   0.583831   0.694805
+   11      55.00      08m40s       0.794000         0.867500   0.704545   0.612567   0.704545
+   12      60.00      07m46s       0.761100         0.870636   0.711039   0.626231   0.711039
+   13      65.00      06m50s       0.738900         0.921824   0.707792   0.599131   0.707792
+   14      70.00      05m53s       0.701500         0.900691   0.668831   0.583852   0.668831
+   15      75.00      04m56s       0.691000         0.894960   0.681818   0.585054   0.681818
+   16      80.00      03m58s       0.675000         0.937401   0.659091   0.577621   0.659091
+   17      85.00      02m59s       0.644300         0.888128   0.662338   0.581172   0.662338
+
+[Final evaluation metrics]
+  eval_loss: 0.8706
+  eval_accuracy: 0.7110
+  eval_f1_macro: 0.6262
+  eval_f1_micro: 0.7110
+  eval_f1_weighted: 0.7052
+  eval_runtime: 3.0324
+  eval_samples_per_second: 101.5680
+  eval_steps_per_second: 6.5950
+  epoch: 17.0000
+  step: 3672
+
+[Layer freezing / trainable parameter summary]
+[Freeze] Embedding layer parameters frozen.
+*_Total encoder layers: 24
+*_Unfreezing from layer 18 to 23
+*_Total parameters:     559,893,507
+*__Trainable parameters: 76,630,019
+*__Trainable ratio:      13.69%
+✅ classifier.dense: (2 params)
+✅ classifier.out_proj: (2 params)
+✅ roberta.encoder.layer.18: (16 params)
+✅ roberta.encoder.layer.19: (16 params)
+✅ roberta.encoder.layer.20: (16 params)
+✅ roberta.encoder.layer.21: (16 params)
+✅ roberta.encoder.layer.22: (16 params)
+✅ roberta.encoder.layer.23: (16 params)
