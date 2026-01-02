@@ -10,24 +10,24 @@ prompts_path    = os.path.join("..", "..", "prompts")
 # NOTE: you need to check if a certain model is deployed by any HF inference provider
 MODEL_REGISTRY = {
     # ---- LLaMA family ----
-    "llama-3.1-nemotron-253b": ("nvidia/Llama-3_1-Nemotron-Ultra-253B-v1", 'nebius'),
-    # "llama-3.1-405b-Instruct": ("meta-llama/Llama-3.1-405B-Instruct", 'nebius'), no longer working
-    "llama-3.3-70b-Instruct": ("meta-llama/Llama-3.3-70B-Instruct", 'nebius'), 
+    # "llama-3.1-nemotron-253b": ("nvidia/Llama-3_1-Nemotron-Ultra-253B-v1", 'nebius'),
+    # # "llama-3.1-405b-Instruct": ("meta-llama/Llama-3.1-405B-Instruct", 'nebius'), no longer working
+    # "llama-3.3-70b-Instruct": ("meta-llama/Llama-3.3-70B-Instruct", 'nebius'), 
 
-    # # ---- Qwen family ---- 
-    "qwen3-coder-480b-Instruct": ("Qwen/Qwen3-Coder-480B-A35B-Instruct",  'nebius'), 
+    # # # ---- Qwen family ---- 
+    # "qwen3-coder-480b-Instruct": ("Qwen/Qwen3-Coder-480B-A35B-Instruct",  'nebius'), 
 
-    "qwen3-235b-instruct": ("Qwen/Qwen3-235B-A22B-Instruct-2507",'nebius'), 
+    # "qwen3-235b-instruct": ("Qwen/Qwen3-235B-A22B-Instruct-2507",'nebius'), 
     "qwen3-80b-instruct": ("Qwen/Qwen3-Next-80B-A3B-Instruct", 'novita'), 
-    "qwen3-32b-instruct": ("Qwen/Qwen3-30B-A3B-Instruct-2507",'nebius'), 
+    # "qwen3-32b-instruct": ("Qwen/Qwen3-30B-A3B-Instruct-2507",'nebius'), 
 
-    # ---- Mixtral ---- 
-    "mixtral-8x22b-Instruct": ("mistralai/Mixtral-8x22B-Instruct-v0.1", 'nscale'),  
-    # "mixtral-8x7b-Instruct": ("mistralai/Mixtral-8x7B-Instruct-v0.1", 'together'), no longer working
+    # # ---- Mixtral ---- 
+    # "mixtral-8x22b-Instruct": ("mistralai/Mixtral-8x22B-Instruct-v0.1", 'nscale'),  
+    # # "mixtral-8x7b-Instruct": ("mistralai/Mixtral-8x7B-Instruct-v0.1", 'together'), no longer working
 }
 
 # ---- configuration ----
-prompt_template = "07_t1_cot_thot_Q.txt" 
+prompt_template = "05_t1_fs_base-81-shot_IQ.txt" 
 question_col =  "question"  
 hf_token = os.environ["HF_TOKEN"]  # token with “Make calls to Inference Providers”
 
@@ -63,8 +63,13 @@ for llm_name, (model_id, provider) in MODEL_REGISTRY.items():
         if pd.notna(row[pred_col]):    
             continue  
         
-        q = row[question_col]
+        # q = row[question_col] 
+        q = (
+            f"Target question (to evaluate): {row['question']}\n\n"
+            f"Full interviewer turn (may contain multiple questions): {row['interview_question']}"
+        )
         a = row["interview_answer"]
+
         try:
             p = classify(q, a)
             test_df.at[i, pred_col] = p

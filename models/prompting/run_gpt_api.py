@@ -6,9 +6,9 @@ import os, time
 client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 test_data_path  = "../../datasets/test_dataset.csv"
-prediction_path = "../../results/predictions/pronpt"
+prediction_path = "../../results/predictions/prompt"
 prompts_path    = "../../prompts"
-prompt_template = "04_t1_fs_base-27-shot_Q.txt"
+prompt_template = "02_t1_fs_base-3-shot_IQ.txt"
 question_col    = "question"
 
 # ---- model info ----
@@ -49,13 +49,20 @@ def classify(question: str, answer: str) -> str:
         print(f"⚠️ Error: {e}")
         time.sleep(3)
         return "Error"
-
+    
 # ---- run predictions ----
 for i, row in df.iterrows():
     if pd.notna(row[pred_col]):
         continue
 
-    q, a = row[question_col], row["interview_answer"]
+    # q, a = row[question_col], row["interview_answer"]
+
+    q = (
+        f"Target question (to evaluate): {row['question']}\n\n"
+        f"Full interviewer turn (may contain multiple questions): {row['interview_question']}"
+    )
+    a = row["interview_answer"]
+
     p = classify(q, a)
     df.at[i, pred_col] = p
     print(f"Index:: {row['index']}\nCorrect Label: {row['clarity_label']}\nPrediction: {p}\n")

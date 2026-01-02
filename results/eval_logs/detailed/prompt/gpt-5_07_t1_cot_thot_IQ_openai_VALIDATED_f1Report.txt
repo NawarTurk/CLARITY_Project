@@ -1,0 +1,17 @@
+File: gpt-5_07_t1_cot_thot_IQ_openai_VALIDATED.csv
+F1 Macro: 0.621
+F1 Micro: 0.675
+F1 Weighted: 0.690
+Accuracy: 0.675
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+    Clear Reply      0.593     0.646     0.618        79
+     Ambivalent      0.821     0.670     0.738       206
+Clear Non-Reply      0.365     0.826     0.507        23
+
+      micro avg      0.680     0.675     0.678       308
+      macro avg      0.593     0.714     0.621       308
+   weighted avg      0.729     0.675     0.690       308
+

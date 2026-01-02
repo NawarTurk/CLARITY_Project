@@ -1,0 +1,17 @@
+File: gpt-5_m_majority_majority_majority_majority_majority_VALIDATED.csv
+F1 Macro: 0.594
+F1 Micro: 0.662
+F1 Weighted: 0.684
+Accuracy: 0.662
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+    Clear Reply      0.731     0.241     0.362        79
+     Ambivalent      0.812     0.820     0.816       206
+Clear Non-Reply      0.533     0.696     0.604        23
+
+      micro avg      0.773     0.662     0.713       308
+      macro avg      0.692     0.586     0.594       308
+   weighted avg      0.771     0.662     0.684       308
+
