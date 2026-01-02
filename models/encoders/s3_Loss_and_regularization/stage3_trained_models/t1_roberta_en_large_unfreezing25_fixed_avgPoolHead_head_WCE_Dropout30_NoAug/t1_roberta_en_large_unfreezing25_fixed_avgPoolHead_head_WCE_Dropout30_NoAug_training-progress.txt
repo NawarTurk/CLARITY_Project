@@ -1,0 +1,42 @@
+Epoch  Progress%         ETA  Training Loss  Validation Loss   Accuracy   F1 Macro   F1 Micro
+---------------------------------------------------------------------------------------------
+    1       5.00      00m54s       1.075000         0.908579   0.568182   0.440656   0.568182
+    2      10.00      09m25s       0.900200         0.791688   0.542208   0.496064   0.542208
+    3      15.00      11m36s       0.774600         0.823681   0.603896   0.500050   0.603896
+    4      20.00      12m18s       0.645200         0.900034   0.652597   0.585183   0.652597
+    5      25.00      12m15s       0.563700         0.919033   0.525974   0.517299   0.525974
+    6      30.00      11m52s       0.468700         0.885787   0.555195   0.529020   0.555195
+    7      35.00      11m18s       0.389100         0.776223   0.672078   0.608163   0.672078
+    8      40.00      10m38s       0.332600         1.046670   0.636364   0.575744   0.636364
+    9      45.00      09m55s       0.281700         1.131000   0.655844   0.596570   0.655844
+   10      50.00      09m08s       0.238900         1.306370   0.623377   0.563217   0.623377
+   11      55.00      08m17s       0.207100         1.568941   0.600649   0.564171   0.600649
+   12      60.00      07m27s       0.191700         1.725566   0.642857   0.605693   0.642857
+
+[Final evaluation metrics]
+  eval_loss: 0.7762
+  eval_accuracy: 0.6721
+  eval_f1_macro: 0.6082
+  eval_f1_micro: 0.6721
+  eval_f1_weighted: 0.6730
+  eval_runtime: 3.0700
+  eval_samples_per_second: 100.3250
+  eval_steps_per_second: 6.5150
+  epoch: 12.0000
+  step: 2592
+
+[Layer freezing / trainable parameter summary]
+[Freeze] Embedding layer parameters frozen.
+*_Total encoder layers: 24
+*_Unfreezing from layer 18 to 23
+*_Total parameters:     355,362,819
+*__Trainable parameters: 76,630,019
+*__Trainable ratio:      21.56%
+✅ base_model.encoder.layer.18: (16 params)
+✅ base_model.encoder.layer.19: (16 params)
+✅ base_model.encoder.layer.20: (16 params)
+✅ base_model.encoder.layer.21: (16 params)
+✅ base_model.encoder.layer.22: (16 params)
+✅ base_model.encoder.layer.23: (16 params)
+✅ base_model.pooler: (2 params)
+✅ classifier.classifier: (2 params)

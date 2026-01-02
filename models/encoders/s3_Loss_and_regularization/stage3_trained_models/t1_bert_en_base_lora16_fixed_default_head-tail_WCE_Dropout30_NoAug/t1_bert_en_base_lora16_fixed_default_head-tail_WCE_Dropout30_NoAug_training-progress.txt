@@ -1,0 +1,46 @@
+Epoch  Progress%         ETA  Training Loss  Validation Loss   Accuracy   F1 Macro   F1 Micro
+---------------------------------------------------------------------------------------------
+    1       5.00      00m21s       1.083900         1.078077   0.318182   0.272481   0.318182
+    2      10.00      05m09s       1.028000         1.038675   0.363636   0.308327   0.363636
+    3      15.00      06m23s       0.952000         0.929676   0.535714   0.458856   0.535714
+    4      20.00      06m43s       0.887100         0.894835   0.607143   0.521837   0.607143
+    5      25.00      06m42s       0.830900         0.850624   0.662338   0.568181   0.662338
+    6      30.00      06m30s       0.796000         0.812277   0.698052   0.608629   0.698052
+    7      35.00      06m12s       0.774200         0.802464   0.672078   0.598729   0.672078
+    8      40.00      05m51s       0.751900         0.805482   0.681818   0.614442   0.681818
+    9      45.00      05m28s       0.721200         0.792482   0.681818   0.623309   0.681818
+   10      50.00      05m03s       0.713600         0.855843   0.639610   0.591492   0.639610
+   11      55.00      04m36s       0.689300         0.803724   0.662338   0.607880   0.662338
+   12      60.00      04m08s       0.683400         0.826241   0.613636   0.577984   0.613636
+   13      65.00      03m38s       0.661300         0.865502   0.603896   0.556515   0.603896
+   14      70.00      03m09s       0.648600         0.829822   0.626623   0.580005   0.626623
+
+[Final evaluation metrics]
+  eval_loss: 0.7925
+  eval_accuracy: 0.6818
+  eval_f1_macro: 0.6233
+  eval_f1_micro: 0.6818
+  eval_f1_weighted: 0.6884
+  eval_runtime: 1.1246
+  eval_samples_per_second: 273.8740
+  eval_steps_per_second: 17.7840
+  epoch: 14.0000
+  step: 3024
+
+[Layer freezing / trainable parameter summary]
+*_Total parameters:     110,076,678
+*__Trainable parameters: 594,438
+*__Trainable ratio:      0.54%
+✅ base_model.model: (4 params)
+✅ base_model.model.bert.encoder.layer.0: (4 params)
+✅ base_model.model.bert.encoder.layer.1: (4 params)
+✅ base_model.model.bert.encoder.layer.10: (4 params)
+✅ base_model.model.bert.encoder.layer.11: (4 params)
+✅ base_model.model.bert.encoder.layer.2: (4 params)
+✅ base_model.model.bert.encoder.layer.3: (4 params)
+✅ base_model.model.bert.encoder.layer.4: (4 params)
+✅ base_model.model.bert.encoder.layer.5: (4 params)
+✅ base_model.model.bert.encoder.layer.6: (4 params)
+✅ base_model.model.bert.encoder.layer.7: (4 params)
+✅ base_model.model.bert.encoder.layer.8: (4 params)
+✅ base_model.model.bert.encoder.layer.9: (4 params)

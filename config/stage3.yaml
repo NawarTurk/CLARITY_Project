@@ -2,7 +2,7 @@
 # Truncation + classification head will be fixed per model after Stage 2 analysis
 # Loss variants are explored for each final configuration
 
-stage: s3_representation_classification
+stage: s3_loss&regularization
 
 loss_functions:
   - WCE

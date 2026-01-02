@@ -1,0 +1,37 @@
+Epoch  Progress%         ETA  Training Loss  Validation Loss   Accuracy   F1 Macro   F1 Micro
+---------------------------------------------------------------------------------------------
+    1       5.00      00m19s       1.086200         0.924904   0.548701   0.461581   0.548701
+    2      10.00      03m34s       0.924800         0.916489   0.285714   0.292886   0.285714
+    3      15.00      04m23s       0.852200         0.894313   0.451299   0.448866   0.451299
+    4      20.00      04m36s       0.759400         0.987997   0.496753   0.526758   0.496753
+    5      25.00      04m35s       0.737600         0.827891   0.678571   0.576466   0.678571
+    6      30.00      04m26s       0.677700         0.949507   0.655844   0.559369   0.655844
+    7      35.00      04m14s       0.639600         1.023488   0.636364   0.520017   0.636364
+    8      40.00      04m00s       0.588400         1.075639   0.623377   0.537197   0.623377
+    9      45.00      03m43s       0.536400         1.036955   0.610390   0.527026   0.610390
+   10      50.00      03m25s       0.524300         1.333630   0.636364   0.530107   0.636364
+
+[Final evaluation metrics]
+  eval_loss: 0.8279
+  eval_accuracy: 0.6786
+  eval_f1_macro: 0.5765
+  eval_f1_micro: 0.6786
+  eval_f1_weighted: 0.6721
+  eval_runtime: 1.2226
+  eval_samples_per_second: 251.9280
+  eval_steps_per_second: 16.3590
+  epoch: 10.0000
+  step: 2160
+
+[Layer freezing / trainable parameter summary]
+[Freeze] Embedding layer parameters frozen.
+*_Total encoder layers: 12
+*_Unfreezing from layer 9 to 11
+*_Total parameters:     278,045,955
+*__Trainable parameters: 21,856,515
+*__Trainable ratio:      7.86%
+✅ classifier.dense: (2 params)
+✅ classifier.out_proj: (2 params)
+✅ roberta.encoder.layer.10: (16 params)
+✅ roberta.encoder.layer.11: (16 params)
+✅ roberta.encoder.layer.9: (16 params)

@@ -1,18 +1,18 @@
 Model: majorityStage1-majorityStage1
 Head Type: defaultHead
-F1 Macro: 0.617
-F1 Micro: 0.714
-F1 Weighted: 0.712
-Accuracy: 0.714
+F1 Macro: 0.674
+F1 Micro: 0.737
+F1 Weighted: 0.738
+Accuracy: 0.737
 
 Classification Report:
                  precision    recall  f1-score   support
 
-     Ambivalent      0.792     0.816     0.804       206
-Clear Non-Reply      0.429     0.652     0.517        23
-    Clear Reply      0.607     0.468     0.529        79
+     Ambivalent      0.817     0.801     0.809       206
+Clear Non-Reply      0.571     0.696     0.627        23
+    Clear Reply      0.590     0.582     0.586        79
 
-       accuracy                          0.714       308
-      macro avg      0.609     0.645     0.617       308
-   weighted avg      0.718     0.714     0.712       308
+       accuracy                          0.737       308
+      macro avg      0.659     0.693     0.674       308
+   weighted avg      0.740     0.737     0.738       308
 

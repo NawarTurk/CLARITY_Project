@@ -1,0 +1,40 @@
+Epoch  Progress%         ETA  Training Loss  Validation Loss   Accuracy   F1 Macro   F1 Micro
+---------------------------------------------------------------------------------------------
+    1       5.00      00m53s       1.033100         0.917097   0.272727   0.271870   0.272727
+    2      10.00      13m03s       0.853300         0.885547   0.389610   0.399924   0.389610
+    3      15.00      16m09s       0.751300         0.780082   0.629870   0.567416   0.629870
+    4      20.00      17m01s       0.673100         0.858901   0.574675   0.525536   0.574675
+    5      25.00      16m57s       0.590700         0.771096   0.681818   0.604299   0.681818
+    6      30.00      16m28s       0.518500         1.073561   0.422078   0.432520   0.422078
+    7      35.00      15m42s       0.453100         0.831721   0.685065   0.633312   0.685065
+    8      40.00      14m47s       0.387100         1.079162   0.587662   0.523352   0.587662
+    9      45.00      13m46s       0.329100         0.849106   0.652597   0.600469   0.652597
+   10      50.00      12m40s       0.323500         1.061217   0.594156   0.531920   0.594156
+   11      55.00      11m31s       0.254100         1.122169   0.655844   0.599203   0.655844
+   12      60.00      10m18s       0.220600         1.341762   0.659091   0.556716   0.659091
+
+[Final evaluation metrics]
+  eval_loss: 0.8317
+  eval_accuracy: 0.6851
+  eval_f1_macro: 0.6333
+  eval_f1_micro: 0.6851
+  eval_f1_weighted: 0.7000
+  eval_runtime: 2.8801
+  eval_samples_per_second: 106.9390
+  eval_steps_per_second: 6.9440
+  epoch: 12.0000
+  step: 2592
+
+[Layer freezing / trainable parameter summary]
+[Freeze] Embedding layer parameters frozen.
+*_Total encoder layers: 12
+*_Unfreezing from layer 9 to 11
+*_Total parameters:     184,424,451
+*__Trainable parameters: 22,251,267
+*__Trainable ratio:      12.07%
+✅ base_model.encoder: (3 params)
+✅ base_model.encoder.layer.10: (16 params)
+✅ base_model.encoder.layer.11: (16 params)
+✅ base_model.encoder.layer.9: (16 params)
+✅ classifier.fc1: (2 params)
+✅ classifier.fc2: (2 params)
