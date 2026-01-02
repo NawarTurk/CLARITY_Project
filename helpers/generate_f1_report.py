@@ -171,9 +171,21 @@ def main():
         df = pd.read_csv(f)
         y_true = df[TARGET_COLUMN].astype(str).str.strip().tolist()
         y_pred = df[MODEL_PREDICTION_COLUMN].astype(str).str.strip().tolist()
-        label_order = sorted(set(y_true) | set(y_pred)) 
+        # label_order = sorted(set(y_true) | set(y_pred))
+        INVALID_LABEL = "Invalid Output"
+        invalid_rate = sum(p == INVALID_LABEL for p in y_pred) / len(y_pred)
 
-        f1_macro = f1_score(y_true, y_pred, average="macro")
+        
+        OFFICIAL_LABELS = ["Clear Reply", "Ambivalent", "Clear Non-Reply"]
+        # f1_macro = f1_score(y_true, y_pred, average="macro")
+        f1_macro = f1_score(
+            y_true,
+            y_pred,
+            labels=OFFICIAL_LABELS,
+            average="macro",
+            zero_division=0,
+        )
+         
         f1_micro = f1_score(y_true, y_pred, average="micro")
         f1_weighted = f1_score(y_true, y_pred, average="weighted")
         accuracy = accuracy_score(y_true, y_pred)
@@ -197,12 +209,15 @@ def main():
             "f1_micro": f1_micro,
             "f1_weighted": f1_weighted,
             "accuracy": accuracy,
+            "invalid_rate": invalid_rate,
+            "file_name_complete":f.name
         })
 
         report = classification_report(
             y_true,
             y_pred,
-            labels=label_order,
+            # labels=label_order,
+            labels=OFFICIAL_LABELS,
             digits=3,
             zero_division=0,
         )

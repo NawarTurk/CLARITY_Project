@@ -7,9 +7,9 @@ Accuracy: 0.584
 Classification Report:
                  precision    recall  f1-score   support
 
+    Clear Reply      0.402     0.494     0.443        79
      Ambivalent      0.778     0.597     0.676       206
 Clear Non-Reply      0.340     0.783     0.474        23
-    Clear Reply      0.402     0.494     0.443        79
 
        accuracy                          0.584       308
       macro avg      0.507     0.624     0.531       308

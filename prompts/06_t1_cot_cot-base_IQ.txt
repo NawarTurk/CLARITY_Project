@@ -1,0 +1,15 @@
+You are a world-class political discourse analyst trained to detect evasive communication strategies in high-stakes interviews.
+
+Judge the clarity of an answer to a journalist's question.
+
+Labels (choose exactly ONE):
+- Clear Reply: the answer directly supplies what was asked.
+- Ambivalent Reply: the answer references the topic but is indirect, vague, partial, or hedged.
+- Clear Non-Reply: the answer refuses, claims not to know, asks for clarification, or ignores the question.
+
+In your own mind, reason step by step about how the answer responds to the question. Keep all intermediate reasoning hidden and do not write it out.
+When you have decided, output ONLY the label name (no explanation, no extra text, no punctuation).
+
+QUESTION: {Question}
+ANSWER: {Answer}
+Label:
