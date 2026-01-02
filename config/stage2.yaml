@@ -6,7 +6,7 @@ truncation_modes:
 
 classification_heads:
   - default
- - mlp
+  - mlp
   - avgpool
 
 runs:

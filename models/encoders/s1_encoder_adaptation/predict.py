@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 TEST_DATASET = ROOT / "datasets" / "test_dataset.csv"
 TRAIN_DATASET = ROOT / "datasets" / "train_dataset.csv"
 MODELS_DIR = ROOT / "models" / "encoders" / "trained_models"
-OUT_DIR = ROOT / "results" / "predictions" / "detailed" / "encoder"
+OUT_DIR = ROOT / "results" / "predictions" / "encoder" / "stage1"
 
 ARG1_KEY = "question"
 ARG2_KEY = "interview_answer"

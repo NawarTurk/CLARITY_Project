@@ -251,25 +251,24 @@ def _get_label_mapping() -> Dict[int, str]:
 
 def _infer_truncation_from_slug(slug: str) -> str:
     """
-    Infer truncation mode from the final slug token.
+    Infer truncation mode from the slug tokens.
 
-    Training uses:
-      - 'head-tail' (or legacy 'head_tail') for head-tail truncation
-      - 'head' for standard head truncation
-      - 'notrunc' / other tags for full-length or custom strategies
+    Training uses a token for truncation ('head-tail'/'head_tail' or 'head'),
+    and Stage 3 appends an extra loss/dropout token at the end, e.g.
+      ..._head-tail_WCE-Dropout30
 
-    For prediction, we map:
-      - 'head-tail' or 'head_tail' -> 'head_tail'
-      - 'head' or anything else     -> 'head'  (standard truncation)
+    For prediction, we scan from the end and pick the first token that matches
+    a known truncation tag.
     """
     parts = slug.split("_")
     if not parts:
         return "head"
-    raw = parts[-1]
-    if raw in ("head-tail", "head_tail"):
-        return "head_tail"
-    if raw == "head":
-        return "head"
+
+    for raw in reversed(parts):
+        if raw in ("head-tail", "head_tail"):
+            return "head_tail"
+        if raw == "head":
+            return "head"
     return "head"
 
 
@@ -502,11 +501,11 @@ def _load_model_and_tokenizer(model_dir: Path, slug: str, *, merge_lora: bool = 
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Predict using Stage 2 encoder models")
+    parser = argparse.ArgumentParser(description="Predict using Stage 3 encoder models")
     parser.add_argument(
         "--model_dir",
         required=True,
-        help="Model slug under Stage 2 trained models, or 'all' to run for every model",
+        help="Model slug under Stage 3 trained models, or 'all' to run for every model",
     )
     parser.add_argument(
         "--merge_lora",
@@ -517,9 +516,9 @@ def main() -> None:
 
     root = ROOT
     dataset_path = root / "datasets" / "test_dataset.csv"
-    models_root = root / "models" / "encoders" / "s2_representation_classification" / "stage2_trained_models"
-    # Save Stage 2 predictions under the shared encoder results folder
-    out_dir = root / "results" / "predictions" / "encoder" / "stage2"
+    models_root = root / "models" / "encoders" / "s3_Loss_and_regularization" / "stage3_trained_models"
+    # Save Stage 3 predictions under encoder/stage3
+    out_dir = root / "results" / "predictions" / "encoder" / "stage3"
 
     if not dataset_path.exists():
         raise FileNotFoundError(f"Dataset not found: {dataset_path}")
@@ -528,13 +527,13 @@ def main() -> None:
     if args.model_dir.lower() == "all":
         model_dirs = sorted(p for p in models_root.iterdir() if p.is_dir())
         if not model_dirs:
-            raise FileNotFoundError(f"No Stage 2 trained models found in {models_root}")
+            raise FileNotFoundError(f"No Stage 3 trained models found in {models_root}")
     else:
         candidate = models_root / args.model_dir
         if not candidate.exists() or not candidate.is_dir():
             available = [p.name for p in models_root.iterdir() if p.is_dir()] if models_root.exists() else []
             raise FileNotFoundError(
-                f"Stage 2 model '{args.model_dir}' not found in {models_root}. "
+                f"Stage 3 model '{args.model_dir}' not found in {models_root}. "
                 f"Available: {', '.join(available) if available else 'None'}"
             )
         model_dirs = [candidate]
@@ -547,7 +546,7 @@ def main() -> None:
 
     for model_dir in model_dirs:
         slug = model_dir.name
-        print(f"[Stage 2] Predicting with model '{slug}'...")
+        print(f"[Stage 3] Predicting with model '{slug}'...")
 
         model, tokenizer, id2label = _load_model_and_tokenizer(model_dir, slug, merge_lora=args.merge_lora)
         model.to(device).eval()

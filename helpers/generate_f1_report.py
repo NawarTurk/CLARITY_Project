@@ -9,6 +9,9 @@ OUTPUT_DIR = Path(__file__).resolve().parents[1] / "results" / "eval_logs" / "de
 GLOBAL_REPORT_DIR = Path(__file__).resolve().parents[1] / "results" 
 
 ENCODER_PREDICTION_DIR = Path(__file__).resolve().parents[1] / "results" / "predictions" / "detailed" / "encoder"
+ENCODER_STAGE1_PREDICTION_DIR = Path(__file__).resolve().parents[1] / "results" / "predictions" / "encoder" / "stage1"
+ENCODER_STAGE2_PREDICTION_DIR = Path(__file__).resolve().parents[1] / "results" / "predictions" / "encoder" / "stage2"
+ENCODER_STAGE3_PREDICTION_DIR = Path(__file__).resolve().parents[1] / "results" / "predictions" / "encoder" / "stage3"
 STAGE2_ENCODER_PREDICTION_DIR = Path(__file__).resolve().parents[1] / "results" / "predictions" / "stage2_encoder"
 ENCODER_OUTPUT_DIR = Path(__file__).resolve().parents[1] / "results" / "eval_logs" / "detailed" / "encoder"
 ENCODER_TARGET_COLUMN = "clarity_label"
@@ -48,13 +51,18 @@ def save_global_report(global_report, filename="prompt_global_f1_summary.csv"):
 
 
 def process_encoder_predictions():
-    # Collect encoder prediction files from both the original encoder folder
-    # and the Stage 2 encoder prediction folder.
+    # Collect encoder prediction files from the encoder stage folders (and keep
+    # support for the original detailed encoder folder).
     files = []
-    if ENCODER_PREDICTION_DIR.exists():
-        files.extend(sorted(ENCODER_PREDICTION_DIR.glob("*_predictions.csv")))
-    if STAGE2_ENCODER_PREDICTION_DIR.exists():
-        files.extend(sorted(STAGE2_ENCODER_PREDICTION_DIR.glob("*_predictions.csv")))
+    for pred_dir in (
+        ENCODER_PREDICTION_DIR,
+        ENCODER_STAGE1_PREDICTION_DIR,
+        ENCODER_STAGE2_PREDICTION_DIR,
+        ENCODER_STAGE3_PREDICTION_DIR,
+        STAGE2_ENCODER_PREDICTION_DIR,
+    ):
+        if pred_dir.exists():
+            files.extend(sorted(pred_dir.glob("*_predictions.csv")))
 
     ENCODER_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     GLOBAL_REPORT_DIR.mkdir(parents=True, exist_ok=True)
@@ -80,11 +88,13 @@ def process_encoder_predictions():
         parts = experiment_name.split("_")
 
         # EXPECTED (original encoder detailed predictions):
-        #   task_arch_lang_size_tune_param_head_trunc_data_loss
+        #   task_arch_lang_size_tune_param_head_data_trunc_loss
         #
         # Stage 2 encoder predictions use a shorter slug:
         #   task_arch_lang_size_tune_param_head_trunc
         if len(parts) >= 10:
+            # Stage 1 / detailed encoder naming, e.g.:
+            #   t1_bert_en_base_full_fixed_defaultHead_originalData_truncHead_lossCE
             (
                 task_id,
                 arch,
@@ -93,15 +103,15 @@ def process_encoder_predictions():
                 tune,
                 param_mode,
                 head_type,
-                truncation,
                 data_variant,
+                truncation,
                 loss_type,
             ) = parts[:10]
         elif len(parts) >= 8:
             # Stage 2 slug: t1_bert_en_base_lora16_fixed_avgPoolHead_head-tail
             task_id, arch, lang, size, tune, param_mode, head_type, truncation = parts[:8]
             data_variant = "stage2"
-            loss_type = "CE"
+            loss_type = "lossCE"
         else:
             print(f"[Warn] Skipping {f.name}: unexpected filename format.")
             continue

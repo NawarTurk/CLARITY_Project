@@ -107,6 +107,8 @@ def _build_output_slug(
     head_type: str,
     unfreeze_ratio: Optional[float] = None,
     truncation: Optional[str] = None,
+    loss_type: Optional[str] = None,
+    dropout: Optional[float] = None,
 ) -> str:
     if model_name not in MODEL_METADATA:
         raise KeyError(
@@ -130,6 +132,22 @@ def _build_output_slug(
         f"{TASK_ID}_{meta['arch']}_{meta['lang']}_{meta['size']}"
         f"_{strategy_tag}_{param_mode}_{head_tag}_{trunc_tag}"
     )
+
+    if loss_type is not None or dropout is not None:
+        loss_tag = (loss_type or "WCE").upper()
+        drop_tag = None
+        if dropout is not None:
+            try:
+                drop_tag = int(round(100 * float(dropout)))
+            except (TypeError, ValueError):
+                drop_tag = None
+        if drop_tag is not None:
+            loss_tag = f"{loss_tag}_Dropout{drop_tag:02d}"
+        slug = f"{slug}_{loss_tag}"
+
+    # Data augmentation tag (Stage 4 will add variants; Stage 3 is NoAug)
+    slug = f"{slug}_NoAug"
+
     return _fs_safe_model_name(slug)
 
 
@@ -349,6 +367,7 @@ class CLSHeadSequenceClassifier(nn.Module):
         id2label: Dict[int, str],
         label2id: Dict[str, int],
         head_type: str = "mlp",
+        dropout: float = 0.1,
     ):
         super().__init__()
 
@@ -373,6 +392,10 @@ class CLSHeadSequenceClassifier(nn.Module):
 
         if head_type == "mlp":
             self.classifier = MLPHead(hidden_size=hidden_size, num_labels=num_labels)
+            if hasattr(self.classifier, "dropout1") and isinstance(self.classifier.dropout1, nn.Dropout):
+                self.classifier.dropout1.p = float(dropout)
+            if hasattr(self.classifier, "dropout2") and isinstance(self.classifier.dropout2, nn.Dropout):
+                self.classifier.dropout2.p = float(dropout)
         else:
             self.classifier = AvgPoolHead(hidden_size=hidden_size, num_labels=num_labels)
 
@@ -466,9 +489,21 @@ class CLSHeadSequenceClassifier(nn.Module):
 # Trainer with weighted loss + live epoch table
 # -----------------------------------------------------------------------------
 class WeightedTrainer(Trainer):
-    def __init__(self, class_weights: torch.Tensor, *args, **kwargs):
+    """Trainer with class-weighted (WCE / Focal) loss and live epoch metrics table."""
+
+    def __init__(
+        self,
+        class_weights: torch.Tensor,
+        *args,
+        loss_type: str = "WCE",
+        focal_gamma: float = 2.0,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         self.class_weights = class_weights.float()
+        loss_type = (loss_type or "WCE").upper()
+        self.loss_type = "FOCAL" if loss_type == "FOCAL" else "WCE"
+        self.focal_gamma = float(focal_gamma)
         self._epoch_cache: Dict[int, Dict[str, float]] = {}
         self._printed_header = False
         self._train_start_time: Optional[float] = None
@@ -489,8 +524,34 @@ class WeightedTrainer(Trainer):
         outputs = model(**inputs)
         logits = outputs.get("logits")
 
-        loss_fct = CrossEntropyLoss(weight=self.class_weights.to(logits.device))
-        loss = loss_fct(logits.view(-1, self.model.config.num_labels), labels.view(-1))
+        logits = logits.view(-1, self.model.config.num_labels)
+        labels = labels.view(-1)
+
+        if self.loss_type == "FOCAL":
+            valid_mask = labels != -100
+            if valid_mask.any():
+                logits_valid = logits[valid_mask]
+                labels_valid = labels[valid_mask]
+
+                log_probs = torch.nn.functional.log_softmax(logits_valid, dim=-1)
+                probs = log_probs.exp()
+
+                labels_unsq = labels_valid.unsqueeze(-1)
+                log_pt = log_probs.gather(1, labels_unsq).squeeze(1)
+                pt = probs.gather(1, labels_unsq).squeeze(1)
+
+                focal_factor = (1.0 - pt).pow(self.focal_gamma)
+                class_weights = self.class_weights.to(logits.device)
+                alpha = class_weights[labels_valid]
+
+                loss = -alpha * focal_factor * log_pt
+                loss = loss.mean()
+            else:
+                loss = torch.tensor(0.0, device=logits.device, requires_grad=True)
+        else:
+            loss_fct = CrossEntropyLoss(weight=self.class_weights.to(logits.device))
+            loss = loss_fct(logits, labels)
+
         return (loss, outputs) if return_outputs else loss
 
     def _print_header_if_needed(self) -> None:
@@ -783,11 +844,13 @@ def train_model(
     batch_size: int,
     learning_rate: float,
     num_epochs: int,
-    weight_decay: float,
-    unfreeze_ratio: float,
-    head_type: str,
-    truncation: str = "head",
-) -> None:
+      weight_decay: float,
+      unfreeze_ratio: float,
+      head_type: str,
+      truncation: str = "head",
+      dropout: float = 0.1,
+      loss_type: str = "WCE",
+  ) -> None:
     # Encode labels
     unique_labels = sorted(train_df[label_col].dropna().unique())
     label2id: Dict[str, int] = {lab: i for i, lab in enumerate(unique_labels)}
@@ -918,6 +981,7 @@ def train_model(
             id2label=id2label,
             label2id=label2id,
             head_type=head_type,
+            dropout=float(dropout),
         )
 
     # Apply partial unfreezing and capture summary lines
@@ -974,6 +1038,7 @@ def train_model(
         processing_class=tokenizer,
         compute_metrics=compute_metrics,
         callbacks=callbacks,
+        loss_type=loss_type,
     )
     trainer.freeze_summary_lines = freeze_summary_lines
 
@@ -1027,9 +1092,9 @@ def main():
     )
     parser.add_argument(
         "--param_mode",
-        required=True,
         choices=("fixed",),
-        help="Parameter mode to use.",
+        default="fixed",
+        help="Parameter mode to use (Stage 3 uses fixed).",
     )
     parser.add_argument(
         "--head_type",
@@ -1049,6 +1114,18 @@ def main():
         choices=("head", "head_tail"),
         help="Truncation strategy label used for naming/checkpointing.",
     )
+    parser.add_argument(
+        "--loss_fn",
+        choices=("WCE", "Focal"),
+        default="WCE",
+        help="Loss function name (e.g., WCE, Focal).",
+    )
+    parser.add_argument(
+        "--dropout",
+        type=float,
+        default=0.1,
+        help="Dropout probability for the classification head.",
+    )
     args = parser.parse_args()
 
     model_names = _expand_models(args.model_name)
@@ -1064,7 +1141,8 @@ def main():
             print(
                 f"\n[Run] Training {resolved_model} "
                 f"(head_type={args.head_type}, truncation={args.truncation}, "
-                f"unfreeze_ratio={unfreeze_ratio:.2f}), mode={args.param_mode}"
+                f"unfreeze_ratio={unfreeze_ratio:.2f}, loss_fn={args.loss_fn}, "
+                f"dropout={args.dropout}), mode={args.param_mode}"
             )
 
             train_full_df = pd.read_csv(TRAIN_CSV_PATH)
@@ -1084,10 +1162,12 @@ def main():
                 args.head_type,
                 unfreeze_ratio,
                 args.truncation,
+                args.loss_fn,
+                args.dropout,
             )
-            STAGE2_DIR = Path(__file__).resolve().parent
-            output_dir = STAGE2_DIR / "tmp_checkpoints" / slug
-            final_model_dir = STAGE2_DIR / "stage2_trained_models" / slug
+            STAGE3_DIR = Path(__file__).resolve().parent
+            output_dir = STAGE3_DIR / "tmp_checkpoints" / slug
+            final_model_dir = STAGE3_DIR / "stage3_trained_models" / slug
 
             trainer, _, _, _ = train_model(
                 model_name=resolved_model,
@@ -1105,6 +1185,8 @@ def main():
                 unfreeze_ratio=unfreeze_ratio,
                 head_type=args.head_type,
                 truncation=args.truncation,
+                dropout=float(args.dropout),
+                loss_type=args.loss_fn,
             )
 
             eval_metrics = getattr(trainer, "last_eval_metrics", None) or trainer.evaluate()

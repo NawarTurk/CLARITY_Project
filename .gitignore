@@ -28,6 +28,26 @@ __pycache__/
 # Keep only stage 2 training progress logs
 !/models/encoders/s2_representation_classification/stage2_trained_models/**/*_training-progress.txt
 #!/models/encoders/s2_representation_classification/stage2_trained_models/**/training-progress.txt
+
+# Ignore all Stage 1 saved models/artifacts
+/models/encoders/s1_encoder_adaptation/stage1_trained_models/**
+
+# but keep directories so we can re-include files inside them
+!/models/encoders/s1_encoder_adaptation/stage1_trained_models/**/
+
+# Keep only Stage 1 training progress logs
+!/models/encoders/s1_encoder_adaptation/stage1_trained_models/**/*_training-progress.txt
+#!/models/encoders/s1_encoder_adaptation/stage1_trained_models/**/training-progress.txt
+
+# Ignore all Stage 3 saved models/artifacts
+/models/encoders/s3_Loss_and_regularization/stage3_trained_models/**
+
+# but keep directories so we can re-include files inside them
+!/models/encoders/s3_Loss_and_regularization/stage3_trained_models/**/
+
+# Keep only Stage 3 training progress logs
+!/models/encoders/s3_Loss_and_regularization/stage3_trained_models/**/*_training-progress.txt
+#!/models/encoders/s3_Loss_and_regularization/stage3_trained_models/**/training-progress.txt
 results/models
 
 temp_scripts/

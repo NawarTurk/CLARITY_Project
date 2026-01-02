@@ -286,7 +286,7 @@ def _masked_mean_pool(last_hidden: torch.Tensor, attention_mask: Optional[torch.
     return summed / denom
 
 
-def _patch_seqcls_head(model: nn.Module, head_type: str) -> None:
+def _patch_seqcls_head(model: nn.Module, head_type: str, dropout: float = 0.1) -> None:
     """
     Replace the classifier head AND patch forward to use:
       - mlp: CLS token embedding (last_hidden[:,0,:]) → MLPHead
@@ -317,6 +317,10 @@ def _patch_seqcls_head(model: nn.Module, head_type: str) -> None:
     # Replace classifier module
     if head_type == "mlp":
         new_head = MLPHead(hidden_size=hidden_size, num_labels=num_labels)
+        if hasattr(new_head, "dropout1") and isinstance(new_head.dropout1, nn.Dropout):
+            new_head.dropout1.p = float(dropout)
+        if hasattr(new_head, "dropout2") and isinstance(new_head.dropout2, nn.Dropout):
+            new_head.dropout2.p = float(dropout)
     else:
         new_head = AvgPoolHead(hidden_size=hidden_size, num_labels=num_labels)
 
@@ -553,7 +557,14 @@ def _trainable_summary_lines(model: nn.Module) -> list[str]:
 # -----------------------------------------------------------------------------
 # Output naming
 # -----------------------------------------------------------------------------
-def _build_output_slug(model_name: str, param_mode: str, head_type: str, truncation: str | None = None) -> str:
+def _build_output_slug(
+    model_name: str,
+    param_mode: str,
+    head_type: str,
+    truncation: str | None = None,
+    loss_type: str | None = None,
+    dropout: float | None = None,
+) -> str:
     if model_name not in MODEL_METADATA:
         raise KeyError(
             f"Model '{model_name}' missing from MODEL_METADATA. "
@@ -575,6 +586,22 @@ def _build_output_slug(model_name: str, param_mode: str, head_type: str, truncat
         f"{TASK_ID}_{meta['arch']}_{meta['lang']}_{meta['size']}"
         f"_{lora_tag}_{param_mode}_{head_tag}_{trunc_tag}"
     )
+
+    if loss_type is not None or dropout is not None:
+        loss_tag = (loss_type or "WCE").upper()
+        drop_tag = None
+        if dropout is not None:
+            try:
+                drop_tag = int(round(100 * float(dropout)))
+            except (TypeError, ValueError):
+                drop_tag = None
+        if drop_tag is not None:
+            loss_tag = f"{loss_tag}_Dropout{drop_tag:02d}"
+        slug = f"{slug}_{loss_tag}"
+
+    # Data augmentation tag (Stage 4 will add variants; Stage 3 is NoAug)
+    slug = f"{slug}_NoAug"
+
     return _fs_safe_model_name(slug)
 
 
@@ -582,11 +609,21 @@ def _build_output_slug(model_name: str, param_mode: str, head_type: str, truncat
 # Trainer with class-weighted loss + live epoch metrics table
 # -----------------------------------------------------------------------------
 class WeightedTrainer(Trainer):
-    """Trainer with class-weighted loss and a live epoch metrics table."""
+    """Trainer with class-weighted (WCE / Focal) loss and a live epoch metrics table."""
 
-    def __init__(self, class_weights: torch.Tensor, *args, **kwargs):
+    def __init__(
+        self,
+        class_weights: torch.Tensor,
+        *args,
+        loss_type: str = "WCE",
+        focal_gamma: float = 2.0,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         self.class_weights = class_weights.float()
+        loss_type = (loss_type or "WCE").upper()
+        self.loss_type = "FOCAL" if loss_type == "FOCAL" else "WCE"
+        self.focal_gamma = float(focal_gamma)
         self._epoch_cache: Dict[int, Dict[str, float]] = {}
         self._printed_header = False
         self._train_start_time: Optional[float] = None
@@ -604,8 +641,37 @@ class WeightedTrainer(Trainer):
             labels = inputs.get("label")
         outputs = model(**inputs)
         logits = outputs.get("logits")
-        loss_fct = CrossEntropyLoss(weight=self.class_weights.to(logits.device))
-        loss = loss_fct(logits.view(-1, self.model.config.num_labels), labels.view(-1))
+
+        # Flatten for loss computation
+        logits = logits.view(-1, self.model.config.num_labels)
+        labels = labels.view(-1)
+
+        if self.loss_type == "FOCAL":
+            # Ignore padding labels (if present)
+            valid_mask = labels != -100
+            if valid_mask.any():
+                logits_valid = logits[valid_mask]
+                labels_valid = labels[valid_mask]
+
+                log_probs = torch.nn.functional.log_softmax(logits_valid, dim=-1)
+                probs = log_probs.exp()
+
+                labels_unsq = labels_valid.unsqueeze(-1)
+                log_pt = log_probs.gather(1, labels_unsq).squeeze(1)
+                pt = probs.gather(1, labels_unsq).squeeze(1)
+
+                focal_factor = (1.0 - pt).pow(self.focal_gamma)
+                class_weights = self.class_weights.to(logits.device)
+                alpha = class_weights[labels_valid]
+
+                loss = -alpha * focal_factor * log_pt
+                loss = loss.mean()
+            else:
+                loss = torch.tensor(0.0, device=logits.device, requires_grad=True)
+        else:
+            loss_fct = CrossEntropyLoss(weight=self.class_weights.to(logits.device))
+            loss = loss_fct(logits, labels)
+
         return (loss, outputs) if return_outputs else loss
 
     def _print_header_if_needed(self) -> None:
@@ -860,6 +926,8 @@ def train_model(
     weight_decay: float,
     head_type: str,
     truncation: str = "head",
+    dropout: float = 0.1,
+    loss_type: str = "WCE",
 ) -> None:
     # Encode labels
     unique_labels = sorted(train_df[label_col].dropna().unique())
@@ -985,7 +1053,7 @@ def train_model(
     )
 
     # Patch the head and forward BEFORE LoRA injection
-    _patch_seqcls_head(base_model, head_type=head_type)
+    _patch_seqcls_head(base_model, head_type=head_type, dropout=dropout)
 
     # Freeze everything first; then re-enable LoRA + head/pooler as desired
     for p in base_model.parameters():
@@ -1084,6 +1152,7 @@ def train_model(
         processing_class=tokenizer,
         compute_metrics=compute_metrics,
         callbacks=callbacks,
+        loss_type=loss_type,
     )
 
     # Attach summary lines (LoRA trainables)
@@ -1139,12 +1208,41 @@ def main():
         required=True,
         help="Base HF model key (e.g., xlmr, roberta, mbert, deberta) or 'all' to train every listed model.",
     )
-    parser.add_argument("--param_mode", required=True, choices=("fixed",), help="Parameter mode to use.")
+    parser.add_argument(
+        "--param_mode",
+        choices=("fixed",),
+        default="fixed",
+        help="Parameter mode to use (Stage 3 uses fixed).",
+    )
     parser.add_argument(
         "--head_type",
         default="mlp",
         choices=("default", "mlp", "avgpool"),
         help="mlp = CLS→Dropout→Linear→GELU→Dropout→Linear | avgpool = masked mean pool→Linear",
+    )
+    parser.add_argument(
+        "--loss_fn",
+        choices=("WCE", "Focal"),
+        default="WCE",
+        help="Loss function name (e.g., WCE, Focal).",
+    )
+    parser.add_argument(
+        "--dropout",
+        type=float,
+        default=0.1,
+        help="Dropout probability for the classification head.",
+    )
+    parser.add_argument(
+        "--lora_rank",
+        type=int,
+        default=LORA_R,
+        help="LoRA rank (currently logged but Stage 3 uses a fixed config).",
+    )
+    parser.add_argument(
+        "--lora_top_layers",
+        type=int,
+        default=None,
+        help="Reserved for future use (top encoder layers to apply LoRA).",
     )
     args = parser.parse_args()
 
@@ -1154,7 +1252,8 @@ def main():
     for resolved_model in model_names:
         print(
             f"\n[Run] Training {resolved_model} with LoRA "
-            f"(head_type={args.head_type}, truncation={args.truncation}), mode={args.param_mode}"
+            f"(head_type={args.head_type}, truncation={args.truncation}, "
+            f"loss_fn={args.loss_fn}, dropout={args.dropout}), mode={args.param_mode}"
         )
 
         train_full_df = pd.read_csv(TRAIN_CSV_PATH)
@@ -1168,10 +1267,17 @@ def main():
         test_full_df = pd.read_csv(TEST_CSV_PATH)
         test_full_df = test_full_df.dropna(subset=[ARG1_KEY, ARG2_KEY, TARGET_COLUMN]).copy()
 
-        slug = _build_output_slug(resolved_model, args.param_mode, args.head_type, args.truncation)
-        STAGE2_DIR = Path(__file__).resolve().parent
-        output_dir = STAGE2_DIR / "tmp_checkpoints" / slug
-        final_model_dir = STAGE2_DIR / "stage2_trained_models" / slug
+        slug = _build_output_slug(
+            resolved_model,
+            args.param_mode,
+            args.head_type,
+            args.truncation,
+            args.loss_fn,
+            args.dropout,
+        )
+        STAGE3_DIR = Path(__file__).resolve().parent
+        output_dir = STAGE3_DIR / "tmp_checkpoints" / slug
+        final_model_dir = STAGE3_DIR / "stage3_trained_models" / slug
 
         trainer, _, _, _ = train_model(
             model_name=resolved_model,
@@ -1188,6 +1294,8 @@ def main():
             weight_decay=config["weight_decay"],
             head_type=args.head_type,
             truncation=args.truncation,
+            dropout=float(args.dropout),
+            loss_type=args.loss_fn,
         )
 
         eval_metrics = trainer.evaluate()

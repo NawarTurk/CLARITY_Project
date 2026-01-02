@@ -1,5 +1,4 @@
 import argparse
-from html import parser
 import subprocess
 import sys
 from pathlib import Path
@@ -38,9 +37,7 @@ def run_stage2_from_config():
         for trunc in truncations:
             for head in heads:
 
-                # TODO: REMOVE THIS SKIP AFTER ALL HEAD-TRUNCATION EXPERIMENTS ARE FINISHED
-                # Reason: truncation="head" has already been fully trained
-                if trunc == "head":
+                if trunc == "head" and head == "default":
                     continue
 
                 cmd = [
@@ -90,8 +87,8 @@ def run_stage3_from_config():
         for loss_fn in loss_fns:
             for use_dropout in dropouts:
 
-                 # Reason: CE + no-dropout was what was used in Stage 2
-                if loss_fn == "CE" and use_dropout is False:
+                 # Reason: WCE and dropout 0.1 was what was used in Stage 2
+                if loss_fn == "WCE" and use_dropout == 0.1:
                     continue
 
                 cmd = [
@@ -265,7 +262,8 @@ def main():
         project_root = Path(__file__).resolve().parent
         script = project_root / "models" / "encoders" / "s3_Loss_and_regularization" / "stage3_predict.py"
         print("[Stage 3] Running prediction script:", script)
-        subprocess.run([sys.executable, str(script)], check=True)
+        # By default, run predictions for all Stage 3 trained models.
+        subprocess.run([sys.executable, str(script), "--model_dir", "all"], check=True)
         return
 
 
