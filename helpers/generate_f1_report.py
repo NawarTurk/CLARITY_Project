@@ -51,25 +51,35 @@ def save_global_report(global_report, filename="prompt_global_f1_summary.csv"):
 
 
 def process_encoder_predictions():
-    # Collect encoder prediction files from the encoder stage folders (and keep
-    # support for the original detailed encoder folder).
+    # Collect encoder prediction files from the encoder stage folders (stage1, stage2, ...)
+    # and keep support for legacy, non-staged encoder prediction folders.
     files = []
+
+    encoder_root = Path(__file__).resolve().parents[1] / "results" / "predictions" / "encoder"
+
+    # Stage-aware directories: results/predictions/encoder/stageX
+    if encoder_root.exists():
+        for stage_dir in sorted(encoder_root.iterdir()):
+            if stage_dir.is_dir() and stage_dir.name.startswith("stage"):
+                stage_name = stage_dir.name
+                for f in sorted(stage_dir.glob("*_predictions.csv")):
+                    files.append((f, stage_name))
+
+    # Legacy locations (no explicit stage subfolder)
     for pred_dir in (
         ENCODER_PREDICTION_DIR,
-        ENCODER_STAGE1_PREDICTION_DIR,
-        ENCODER_STAGE2_PREDICTION_DIR,
-        ENCODER_STAGE3_PREDICTION_DIR,
         STAGE2_ENCODER_PREDICTION_DIR,
     ):
         if pred_dir.exists():
-            files.extend(sorted(pred_dir.glob("*_predictions.csv")))
+            for f in sorted(pred_dir.glob("*_predictions.csv")):
+                files.append((f, None))
 
     ENCODER_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     GLOBAL_REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
     encoder_global_report = []
     count = 0
-    for f in files:
+    for f, stage_name in files:
         df = pd.read_csv(f)
 
         y_true = df[ENCODER_TARGET_COLUMN].astype(str).str.strip().tolist()
@@ -138,7 +148,16 @@ def process_encoder_predictions():
             f"Classification Report:\n{report}\n"
         )
 
-        out_path = ENCODER_OUTPUT_DIR / f"{report_basename}_f1Report.txt"
+        # If we know the stage (stage1, stage2, ...), write into the matching
+        # subfolder under results/eval_logs/detailed/encoder; otherwise keep
+        # the legacy behavior of writing to the root encoder folder.
+        if stage_name:
+            out_dir = ENCODER_OUTPUT_DIR / stage_name
+        else:
+            out_dir = ENCODER_OUTPUT_DIR
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        out_path = out_dir / f"{report_basename}_f1Report.txt"
         out_path.write_text(report_lines)
         print(f"Saved encoder report for {model_name}")
         count += 1
