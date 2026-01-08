@@ -1,18 +1,18 @@
 Model: bert-base
 Head Type: default
-F1 Macro: 0.623
-F1 Micro: 0.682
-F1 Weighted: 0.688
-Accuracy: 0.682
+F1 Macro: 0.562
+F1 Micro: 0.607
+F1 Weighted: 0.621
+Accuracy: 0.607
 
 Classification Report:
                  precision    recall  f1-score   support
 
-     Ambivalent      0.797     0.723     0.758       206
-Clear Non-Reply      0.538     0.609     0.571        23
-    Clear Reply      0.495     0.595     0.540        79
+     Ambivalent      0.792     0.592     0.678       206
+Clear Non-Reply      0.480     0.522     0.500        23
+    Clear Reply      0.411     0.671     0.510        79
 
-       accuracy                          0.682       308
-      macro avg      0.610     0.642     0.623       308
-   weighted avg      0.700     0.682     0.688       308
+       accuracy                          0.607       308
+      macro avg      0.561     0.595     0.562       308
+   weighted avg      0.671     0.607     0.621       308
 

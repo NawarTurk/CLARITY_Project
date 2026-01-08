@@ -1,18 +1,18 @@
 Model: mdeberta-base
 Head Type: avgPoolHead
-F1 Macro: 0.551
-F1 Micro: 0.623
-F1 Weighted: 0.637
-Accuracy: 0.623
+F1 Macro: 0.518
+F1 Micro: 0.581
+F1 Weighted: 0.597
+Accuracy: 0.581
 
 Classification Report:
                  precision    recall  f1-score   support
 
-     Ambivalent      0.782     0.660     0.716       206
-Clear Non-Reply      0.316     0.783     0.450        23
-    Clear Reply      0.494     0.481     0.487        79
+     Ambivalent      0.762     0.607     0.676       206
+Clear Non-Reply      0.297     0.826     0.437        23
+    Clear Reply      0.438     0.443     0.440        79
 
-       accuracy                          0.623       308
-      macro avg      0.530     0.641     0.551       308
-   weighted avg      0.673     0.623     0.637       308
+       accuracy                          0.581       308
+      macro avg      0.499     0.625     0.518       308
+   weighted avg      0.644     0.581     0.597       308
 

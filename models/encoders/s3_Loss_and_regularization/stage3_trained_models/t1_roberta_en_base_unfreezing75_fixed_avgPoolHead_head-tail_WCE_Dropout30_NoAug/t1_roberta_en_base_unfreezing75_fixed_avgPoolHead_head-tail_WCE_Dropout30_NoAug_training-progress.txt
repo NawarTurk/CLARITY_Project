@@ -1,26 +1,27 @@
 Epoch  Progress%         ETA  Training Loss  Validation Loss   Accuracy   F1 Macro   F1 Micro
 ---------------------------------------------------------------------------------------------
-    1       5.00      00m19s       0.956500         0.874812   0.574675   0.565689   0.574675
-    2      10.00      05m23s       0.814300         0.944312   0.594156   0.529871   0.594156
-    3      15.00      06m42s       0.660400         0.884788   0.464286   0.470757   0.464286
-    4      20.00      07m03s       0.546800         0.964402   0.633117   0.576945   0.633117
-    5      25.00      07m03s       0.431200         0.931885   0.613636   0.569496   0.613636
-    6      30.00      06m50s       0.341100         1.393962   0.551948   0.518257   0.551948
-    7      35.00      06m32s       0.248700         1.637199   0.594156   0.547875   0.594156
-    8      40.00      06m09s       0.228300         1.836990   0.594156   0.547900   0.594156
-    9      45.00      05m43s       0.151300         1.974619   0.659091   0.555002   0.659091
+    1       5.00      00m18s       1.060300         1.018975   0.253247   0.256888   0.253247
+    2      10.00      05m11s       0.992900         1.040919   0.363636   0.354062   0.363636
+    3      15.00      06m26s       0.900000         0.903283   0.512987   0.469420   0.512987
+    4      20.00      06m47s       0.859700         0.921148   0.512987   0.496349   0.512987
+    5      25.00      06m46s       0.819800         0.888749   0.584416   0.502213   0.584416
+    6      30.00      06m34s       0.765900         1.077295   0.542208   0.480404   0.542208
+    7      35.00      06m15s       0.737700         1.248073   0.425325   0.406347   0.425325
+    8      40.00      05m53s       0.699300         1.029732   0.535714   0.488112   0.535714
+    9      45.00      05m28s       0.685200         1.024512   0.448052   0.442468   0.448052
+   10      50.00      05m01s       0.672200         1.035897   0.451299   0.449610   0.451299
 
 [Final evaluation metrics]
-  eval_loss: 0.9644
-  eval_accuracy: 0.6331
-  eval_f1_macro: 0.5769
-  eval_f1_micro: 0.6331
-  eval_f1_weighted: 0.6445
-  eval_runtime: 0.9896
-  eval_samples_per_second: 311.2490
-  eval_steps_per_second: 20.2110
-  epoch: 9.0000
-  step: 1944
+  eval_loss: 0.8887
+  eval_accuracy: 0.5844
+  eval_f1_macro: 0.5022
+  eval_f1_micro: 0.5844
+  eval_f1_weighted: 0.6046
+  eval_runtime: 0.9611
+  eval_samples_per_second: 320.4740
+  eval_steps_per_second: 20.8100
+  epoch: 5.0000
+  step: 1080
 
 [Layer freezing / trainable parameter summary]
 [Freeze] Embedding layer parameters frozen.
@@ -39,4 +40,4 @@ Epoch  Progress%         ETA  Training Loss  Validation Loss   Accuracy   F1 Mac
 ✅ base_model.encoder.layer.8: (16 params)
 ✅ base_model.encoder.layer.9: (16 params)
 ✅ base_model.pooler: (2 params)
-✅ classifier.classifier: (2 params)
+✅ classifier.fc: (2 params)

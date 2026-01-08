@@ -1,18 +1,18 @@
 Model: deberta-base
 Head Type: multiLayerHead
-F1 Macro: 0.619
-F1 Micro: 0.695
-F1 Weighted: 0.701
-Accuracy: 0.695
+F1 Macro: 0.613
+F1 Micro: 0.656
+F1 Weighted: 0.668
+Accuracy: 0.656
 
 Classification Report:
                  precision    recall  f1-score   support
 
-     Ambivalent      0.807     0.752     0.779       206
-Clear Non-Reply      0.415     0.739     0.531        23
-    Clear Reply      0.560     0.532     0.545        79
+     Ambivalent      0.829     0.636     0.720       206
+Clear Non-Reply      0.413     0.826     0.551        23
+    Clear Reply      0.500     0.658     0.568        79
 
-       accuracy                          0.695       308
-      macro avg      0.594     0.674     0.619       308
-   weighted avg      0.715     0.695     0.701       308
+       accuracy                          0.656       308
+      macro avg      0.581     0.707     0.613       308
+   weighted avg      0.714     0.656     0.668       308
 
