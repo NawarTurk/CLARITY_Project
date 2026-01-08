@@ -12,15 +12,12 @@ from typing import Dict, Optional
 import pandas as pd
 import torch
 import torch.nn as nn
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoConfig, AutoModel, AutoTokenizer, AutoModelForSequenceClassification
 from transformers.modeling_outputs import SequenceClassifierOutput
 
 # PEFT (LoRA)
 from peft import PeftModel
 
-from models.encoders.s2_representation_classification.stage2_train_freeze import (
-    CLSHeadSequenceClassifier,
-)
 from models.encoders.model_metadata import MODEL_METADATA
 
 
@@ -65,6 +62,86 @@ class AvgPoolHead(nn.Module):
 
     def forward(self, pooled_embedding: torch.Tensor) -> torch.Tensor:
         return self.fc(pooled_embedding)
+
+
+class CLSHeadSequenceClassifier(nn.Module):
+    """
+    Lightweight classifier wrapper for legacy Stage 3 checkpoints that only
+    store `pytorch_model.bin` (no config).
+    """
+
+    def __init__(
+        self,
+        model_name: str,
+        *,
+        num_labels: int,
+        id2label: Dict[int, str],
+        label2id: Dict[str, int],
+        head_type: str = "mlp",
+    ):
+        super().__init__()
+
+        head_type = (head_type or "mlp").strip().lower()
+        if head_type not in ("mlp", "avgpool"):
+            raise ValueError(f"Unsupported head_type='{head_type}'. Use 'mlp' or 'avgpool'.")
+
+        config = AutoConfig.from_pretrained(model_name)
+        config.num_labels = int(num_labels)
+        config.id2label = dict(id2label)
+        config.label2id = dict(label2id)
+
+        self.config = config
+        self.model_name = model_name
+        self.head_type = head_type
+
+        self.base_model = AutoModel.from_pretrained(model_name, config=config)
+
+        hidden_size = int(getattr(config, "hidden_size", None) or getattr(config, "d_model", 0) or 0)
+        if hidden_size <= 0:
+            raise ValueError(f"Could not determine hidden size from config for model: {model_name}")
+
+        if head_type == "mlp":
+            self.classifier = MLPHead(hidden_size=hidden_size, num_labels=num_labels)
+        else:
+            self.classifier = AvgPoolHead(hidden_size=hidden_size, num_labels=num_labels)
+
+    @staticmethod
+    def _masked_mean_pool(last_hidden: torch.Tensor, attention_mask: Optional[torch.Tensor]) -> torch.Tensor:
+        if attention_mask is None:
+            return last_hidden.mean(dim=1)
+        mask = attention_mask.to(dtype=last_hidden.dtype).unsqueeze(-1)  # [B, S, 1]
+        summed = (last_hidden * mask).sum(dim=1)                          # [B, H]
+        denom = mask.sum(dim=1).clamp(min=1e-6)                           # [B, 1]
+        return summed / denom
+
+    def forward(
+        self,
+        input_ids=None,
+        attention_mask=None,
+        token_type_ids=None,
+        labels=None,  # ignored for inference
+        **kwargs,
+    ):
+        payload = dict(kwargs)
+        payload["input_ids"] = input_ids
+        payload["attention_mask"] = attention_mask
+        payload["token_type_ids"] = token_type_ids
+        payload.setdefault("return_dict", True)
+
+        filtered = _filter_forward_args(self.base_model, payload)
+        outputs = self.base_model(**filtered)
+
+        last_hidden = getattr(outputs, "last_hidden_state", None)
+        if last_hidden is None:
+            raise RuntimeError("Backbone did not return last_hidden_state; cannot pool.")
+
+        if self.head_type == "mlp":
+            embedding = last_hidden[:, 0, :]  # CLS / <s>
+        else:
+            embedding = self._masked_mean_pool(last_hidden, attention_mask)
+
+        logits = self.classifier(embedding)
+        return SequenceClassifierOutput(logits=logits)
 
 
 def _filter_forward_args(module: nn.Module, kwargs: Dict[str, object]) -> Dict[str, object]:
@@ -485,7 +562,7 @@ def _load_model_and_tokenizer(model_dir: Path, slug: str, *, merge_lora: bool = 
             label2id=label2id,
             head_type=head_type,
         )
-        state_dict = torch.load(state_dict_path, map_location="cpu")
+        state_dict = torch.load(state_dict_path, map_location="cpu", weights_only=True)
         model.load_state_dict(state_dict)
         print(f"[Info] Loaded CLSHeadSequenceClassifier state_dict from {state_dict_path}")
 

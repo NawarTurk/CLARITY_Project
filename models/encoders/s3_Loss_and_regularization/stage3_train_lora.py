@@ -49,7 +49,6 @@ except ImportError as e:
     raise ImportError("Missing dependency: peft. Install with `pip install -U peft`.") from e
 
 
-
 ALLOWED_MODEL_NAMES = [
     "bert-base-multilingual-cased",
     "xlm-roberta-base",
@@ -113,7 +112,7 @@ TRAIN_POOLER = False
 # -----------------
 HEAD_TAGS = {
     "mlp": "multiLayerHead",     # CLS token → Dropout → Linear → GELU → Dropout → Linear
-    "avgpool": "avgPoolHead",    # all tokens → masked average pooling → Linear
+    "avgpool": "avgPoolHead",    # all tokens → masked average pooling → Dropout → Linear
 }
 
 
@@ -212,6 +211,52 @@ def _expand_models(user_name: str):
 
 
 # -----------------------------------------------------------------------------
+# Dropout helpers (apply dropout to the entire backbone)  ✅
+# -----------------------------------------------------------------------------
+def apply_dropout_to_hf_config(config, p: float) -> None:
+    if config is None:
+        return
+    p = float(p)
+    for key in (
+        "hidden_dropout_prob",
+        "attention_probs_dropout_prob",
+        "classifier_dropout",
+        "dropout",
+        "attention_dropout",
+        "hidden_dropout",
+        "pooler_dropout",
+        "emb_dropout",
+    ):
+        if hasattr(config, key):
+            try:
+                setattr(config, key, p)
+            except Exception:
+                pass
+
+
+def patch_model_dropout_modules(model: nn.Module, p: float) -> None:
+    p = float(p)
+    for m in model.modules():
+        # Standard torch dropout
+        if isinstance(m, nn.Dropout):
+            m.p = p
+
+        # DeBERTa "StableDropout" often uses drop_prob
+        if hasattr(m, "drop_prob") and isinstance(getattr(m, "drop_prob", None), (float, int)):
+            try:
+                setattr(m, "drop_prob", p)
+            except Exception:
+                pass
+
+        # Some modules store probability in 'p' but aren't nn.Dropout
+        if hasattr(m, "p") and isinstance(getattr(m, "p", None), (float, int)) and not isinstance(m, nn.Dropout):
+            try:
+                setattr(m, "p", p)
+            except Exception:
+                pass
+
+
+# -----------------------------------------------------------------------------
 # Heads
 # -----------------------------------------------------------------------------
 class MLPHead(nn.Module):
@@ -233,13 +278,15 @@ class MLPHead(nn.Module):
 
 
 class AvgPoolHead(nn.Module):
-    # all token embeddings → masked average pooling → Linear → num_labels logits
-    def __init__(self, hidden_size: int, num_labels: int = 3):
+    # all token embeddings → masked average pooling → Dropout → Linear → num_labels logits
+    def __init__(self, hidden_size: int, num_labels: int = 3, dropout: float = 0.1):
         super().__init__()
-        self.fc = nn.Linear(hidden_size, num_labels)
+        self.dropout = nn.Dropout(dropout)
+        self.fc = nn.Linear(hidden_size, num_labels)  # ✅ renamed back to fc
 
     def forward(self, pooled_embedding: torch.Tensor) -> torch.Tensor:
-        return self.fc(pooled_embedding)
+        x = self.dropout(pooled_embedding)
+        return self.fc(x)
 
 
 def _filter_forward_args(module: nn.Module, kwargs: Dict[str, object]) -> Dict[str, object]:
@@ -290,7 +337,7 @@ def _patch_seqcls_head(model: nn.Module, head_type: str, dropout: float = 0.1) -
     """
     Replace the classifier head AND patch forward to use:
       - mlp: CLS token embedding (last_hidden[:,0,:]) → MLPHead
-      - avgpool: masked mean pool(last_hidden) → AvgPoolHead
+      - avgpool: masked mean pool(last_hidden) → AvgPoolHead (with dropout)
 
     This keeps the model as a HF PreTrainedModel (important for PEFT),
     while ensuring behavior matches your desired CLS strategy.
@@ -322,7 +369,7 @@ def _patch_seqcls_head(model: nn.Module, head_type: str, dropout: float = 0.1) -
         if hasattr(new_head, "dropout2") and isinstance(new_head.dropout2, nn.Dropout):
             new_head.dropout2.p = float(dropout)
     else:
-        new_head = AvgPoolHead(hidden_size=hidden_size, num_labels=num_labels)
+        new_head = AvgPoolHead(hidden_size=hidden_size, num_labels=num_labels, dropout=float(dropout))
 
     # Most seqcls models use .classifier; some use .score
     if hasattr(model, "classifier"):
@@ -394,11 +441,6 @@ def _patch_seqcls_head(model: nn.Module, head_type: str, dropout: float = 0.1) -
         else:
             pooled = _masked_mean_pool(last_hidden, attention_mask)
 
-        # Apply dropout if model defines it (many do)
-        drop = getattr(self, "dropout", None)
-        if isinstance(drop, nn.Module):
-            pooled = drop(pooled)
-
         head_name = getattr(self, "_head_attr_name", "classifier")
         head = getattr(self, head_name)
         logits = head(pooled)
@@ -462,7 +504,11 @@ def _choose_lora_targets(model) -> list[str]:
             if total_matches > 0:
                 return targets
 
-    attentionish = [t for t in ["query", "value", "q_proj", "v_proj", "query_proj", "value_proj", "in_proj"] if t in leafs]
+    attentionish = [
+        t
+        for t in ["query", "value", "q_proj", "v_proj", "query_proj", "value_proj", "in_proj"]
+        if t in leafs
+    ]
     if attentionish:
         total_matches = sum(_count_leaf_matches(model, t) for t in attentionish)
         if total_matches > 0:
@@ -617,6 +663,9 @@ class WeightedTrainer(Trainer):
         *args,
         loss_type: str = "WCE",
         focal_gamma: float = 2.0,
+        best_model_dir: Optional[str] = None,
+        best_metric_name: str = "eval_f1_macro",
+        best_tokenizer=None,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
@@ -634,6 +683,13 @@ class WeightedTrainer(Trainer):
 
         # saved into training-progress.txt
         self.trainable_summary_lines: list[str] = []
+        self.best_metric_name = best_metric_name
+        self.best_model_dir = best_model_dir
+        self.best_eval_metric: Optional[float] = None
+        self.best_eval_metrics: Optional[Dict[str, float]] = None
+        self.best_eval_step: Optional[int] = None
+        self.best_model_saved = False
+        self._best_tokenizer = best_tokenizer
 
     def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
         labels = inputs.get("labels")
@@ -673,6 +729,40 @@ class WeightedTrainer(Trainer):
             loss = loss_fct(logits, labels)
 
         return (loss, outputs) if return_outputs else loss
+
+    def _maybe_update_best(self, metrics: Dict[str, float]) -> None:
+        if not metrics:
+            return
+        metric_val = metrics.get(self.best_metric_name)
+        if metric_val is None:
+            return
+        try:
+            metric_val = float(metric_val)
+        except (TypeError, ValueError):
+            return
+        if self.best_eval_metric is not None and metric_val <= self.best_eval_metric:
+            return
+
+        self.best_eval_metric = metric_val
+        self.best_eval_metrics = dict(metrics)
+        if "epoch" not in self.best_eval_metrics and self.state.epoch is not None:
+            self.best_eval_metrics["epoch"] = float(self.state.epoch)
+        self.best_eval_step = getattr(self.state, "global_step", None)
+        if self.best_model_dir:
+            os.makedirs(self.best_model_dir, exist_ok=True)
+            self.save_model(self.best_model_dir)
+            if self._best_tokenizer is not None:
+                self._best_tokenizer.save_pretrained(self.best_model_dir)
+            self.best_model_saved = True
+
+    def evaluate(self, eval_dataset=None, ignore_keys=None, metric_key_prefix="eval"):
+        metrics = super().evaluate(
+            eval_dataset=eval_dataset,
+            ignore_keys=ignore_keys,
+            metric_key_prefix=metric_key_prefix,
+        )
+        self._maybe_update_best(metrics)
+        return metrics
 
     def _print_header_if_needed(self) -> None:
         if self._printed_header:
@@ -782,7 +872,9 @@ def _save_training_progress(
     slug = os.path.basename(os.path.normpath(final_model_dir))
     out_path = os.path.join(final_model_dir, f"{slug}_training-progress.txt")
 
-    step_val = getattr(trainer.state, "global_step", None)
+    step_val = getattr(trainer, "best_eval_step", None)
+    if step_val is None:
+        step_val = getattr(trainer.state, "global_step", None)
     try:
         step_int = int(step_val) if step_val is not None else None
     except (TypeError, ValueError):
@@ -1052,6 +1144,10 @@ def train_model(
         label2id=label2id,
     )
 
+    # ✅ Apply dropout to entire backbone (config + instantiated modules) BEFORE LoRA injection
+    apply_dropout_to_hf_config(getattr(base_model, "config", None), float(dropout))
+    patch_model_dropout_modules(base_model, float(dropout))
+
     # Patch the head and forward BEFORE LoRA injection
     _patch_seqcls_head(base_model, head_type=head_type, dropout=dropout)
 
@@ -1153,6 +1249,9 @@ def train_model(
         compute_metrics=compute_metrics,
         callbacks=callbacks,
         loss_type=loss_type,
+        best_model_dir=str(final_model_dir),
+        best_metric_name="eval_f1_macro",
+        best_tokenizer=tokenizer,
     )
 
     # Attach summary lines (LoRA trainables)
@@ -1168,15 +1267,17 @@ def train_model(
     # Evaluate and save progress with final eval block (best/chosen model)
     print("[Info] Evaluating (using test set as eval_dataset)…")
     eval_metrics = trainer.evaluate(eval_dataset=dev_ds)
-    for k, v in eval_metrics.items():
+    best_metrics = getattr(trainer, "best_eval_metrics", None) or eval_metrics
+    for k, v in best_metrics.items():
         print(f"  {k}: {v:.4f}" if isinstance(v, float) else f"  {k}: {v}")
 
-    _save_training_progress(trainer, final_model_dir, eval_metrics=eval_metrics)
+    _save_training_progress(trainer, final_model_dir, eval_metrics=best_metrics)
 
     # Save adapter + (if enabled) classifier head via modules_to_save
     os.makedirs(final_model_dir, exist_ok=True)
-    trainer.save_model(final_model_dir)
-    tokenizer.save_pretrained(final_model_dir)
+    if not getattr(trainer, "best_model_saved", False):
+        trainer.save_model(final_model_dir)
+        tokenizer.save_pretrained(final_model_dir)
     _write_head_meta(
         final_model_dir,
         head_type=head_type,
@@ -1218,7 +1319,7 @@ def main():
         "--head_type",
         default="mlp",
         choices=("default", "mlp", "avgpool"),
-        help="mlp = CLS→Dropout→Linear→GELU→Dropout→Linear | avgpool = masked mean pool→Linear",
+        help="mlp = CLS→Dropout→Linear→GELU→Dropout→Linear | avgpool = masked mean pool→Dropout→Linear",
     )
     parser.add_argument(
         "--loss_fn",
@@ -1230,7 +1331,7 @@ def main():
         "--dropout",
         type=float,
         default=0.1,
-        help="Dropout probability for the classification head.",
+        help="Dropout probability (applied to backbone + head in this script).",
     )
     parser.add_argument(
         "--lora_rank",
@@ -1299,10 +1400,11 @@ def main():
         )
 
         eval_metrics = trainer.evaluate()
-        acc = float(eval_metrics.get("eval_accuracy", 0.0))
-        f1_macro = float(eval_metrics.get("eval_f1_macro", 0.0))
-        f1_micro = float(eval_metrics.get("eval_f1_micro", 0.0))
-        f1_weighted = float(eval_metrics.get("eval_f1_weighted", 0.0))
+        best_metrics = getattr(trainer, "best_eval_metrics", None) or eval_metrics
+        acc = float(best_metrics.get("eval_accuracy", 0.0))
+        f1_macro = float(best_metrics.get("eval_f1_macro", 0.0))
+        f1_micro = float(best_metrics.get("eval_f1_micro", 0.0))
+        f1_weighted = float(best_metrics.get("eval_f1_weighted", 0.0))
 
         print(f"\n{resolved_model} on DEV RESULTS:")
         print(f"Accuracy: {acc:.4f} ({acc * 100:.2f}%)")
