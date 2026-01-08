@@ -50,6 +50,59 @@ def save_global_report(global_report, filename="prompt_global_f1_summary.csv"):
     print(f"\n✅ Global summary saved to {global_path}")
 
 
+def _parse_encoder_experiment(experiment_name: str, stage_name: str | None):
+    parts = experiment_name.split("_")
+
+    if stage_name == "stage3":
+        if len(parts) < 8:
+            return None
+        task_id, arch, lang, size, tune, param_mode, head_type, truncation = parts[:8]
+        tail = parts[8:]
+
+        data_variant = stage_name
+        loss_type = ""
+        if tail:
+            if tail[-1] == "NoAug":
+                data_variant = "NoAug"
+                loss_tokens = tail[:-1]
+            else:
+                loss_tokens = tail
+            if loss_tokens:
+                if len(loss_tokens) == 1:
+                    loss_type = loss_tokens[0]
+                elif len(loss_tokens) == 2 and loss_tokens[1].startswith("Dropout"):
+                    loss_type = f"{loss_tokens[0]}-{loss_tokens[1]}"
+                else:
+                    loss_type = "-".join(loss_tokens)
+
+        return task_id, arch, lang, size, tune, param_mode, head_type, truncation, data_variant, loss_type
+
+    # Stage 1 / Stage 2 / legacy encoder naming
+    if len(parts) >= 10:
+        (
+            task_id,
+            arch,
+            lang,
+            size,
+            tune,
+            param_mode,
+            head_type,
+            data_variant,
+            truncation,
+            loss_type,
+        ) = parts[:10]
+        return task_id, arch, lang, size, tune, param_mode, head_type, truncation, data_variant, loss_type
+
+    # Shorter Stage 2 slug fallback: task_arch_lang_size_tune_param_head_trunc
+    if len(parts) >= 8:
+        task_id, arch, lang, size, tune, param_mode, head_type, truncation = parts[:8]
+        data_variant = stage_name or "stage2"
+        loss_type = ""
+        return task_id, arch, lang, size, tune, param_mode, head_type, truncation, data_variant, loss_type
+
+    return None
+
+
 def process_encoder_predictions():
     # Collect encoder prediction files from the encoder stage folders (stage1, stage2, ...)
     # and keep support for legacy, non-staged encoder prediction folders.
@@ -95,36 +148,22 @@ def process_encoder_predictions():
         if experiment_name.endswith(suffix):
             experiment_name = experiment_name[: -len(suffix)]
 
-        parts = experiment_name.split("_")
-
-        # EXPECTED (original encoder detailed predictions):
-        #   task_arch_lang_size_tune_param_head_data_trunc_loss
-        #
-        # Stage 2 encoder predictions use a shorter slug:
-        #   task_arch_lang_size_tune_param_head_trunc
-        if len(parts) >= 10:
-            # Stage 1 / detailed encoder naming, e.g.:
-            #   t1_bert_en_base_full_fixed_defaultHead_originalData_truncHead_lossCE
-            (
-                task_id,
-                arch,
-                lang,
-                size,
-                tune,
-                param_mode,
-                head_type,
-                data_variant,
-                truncation,
-                loss_type,
-            ) = parts[:10]
-        elif len(parts) >= 8:
-            # Stage 2 slug: t1_bert_en_base_lora16_fixed_avgPoolHead_head-tail
-            task_id, arch, lang, size, tune, param_mode, head_type, truncation = parts[:8]
-            data_variant = "stage2"
-            loss_type = "lossCE"
-        else:
+        parsed = _parse_encoder_experiment(experiment_name, stage_name)
+        if parsed is None:
             print(f"[Warn] Skipping {f.name}: unexpected filename format.")
             continue
+        (
+            task_id,
+            arch,
+            lang,
+            size,
+            tune,
+            param_mode,
+            head_type,
+            truncation,
+            data_variant,
+            loss_type,
+        ) = parsed
 
         model_name = f"{arch}-{size}"
 
