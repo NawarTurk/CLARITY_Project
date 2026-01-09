@@ -1,0 +1,18 @@
+Model: mbert-base
+Head Type: defaultHead
+F1 Macro: 0.518
+F1 Micro: 0.623
+F1 Weighted: 0.627
+Accuracy: 0.623
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.740     0.718     0.729       206
+Clear Non-Reply      0.370     0.435     0.400        23
+    Clear Reply      0.420     0.430     0.425        79
+
+       accuracy                          0.623       308
+      macro avg      0.510     0.528     0.518       308
+   weighted avg      0.630     0.623     0.627       308
+

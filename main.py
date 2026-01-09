@@ -115,6 +115,70 @@ def run_stage3_from_config():
                 subprocess.run(cmd, check=True)
 
 
+def run_stage4_from_config():
+    project_root = Path(__file__).resolve().parent
+    config_path = project_root / "config" / "stage4.yaml"
+
+    if not config_path.exists():
+        raise FileNotFoundError(f"Missing config file: {config_path}")
+
+    with open(config_path, "r") as f:
+        cfg = yaml.safe_load(f)
+
+    truncations = cfg.get("truncation_modes")
+    heads = cfg.get("classification_heads")
+    datasets = cfg.get("dataset", ["original"])
+    input_modes = cfg.get("input_mode", ["atomic"])
+
+    for run in cfg["runs"]:
+        script = (
+            project_root
+            / "models"
+            / "encoders"
+            / "s4_data_augmentation"
+            / run["script"]
+        )
+
+        if not script.exists():
+            raise FileNotFoundError(f"Script not found: {script}")
+
+        if truncations and heads:
+            trunc_iter = truncations
+            head_iter = heads
+        else:
+            trunc_iter = [run.get("truncation")]
+            head_iter = [run.get("classification_head") or run.get("head_type")]
+
+        for trunc in trunc_iter:
+            for head in head_iter:
+                if trunc is None or head is None:
+                    raise ValueError(
+                        f"Missing truncation/head_type for stage4 run: {run}"
+                    )
+
+                for dataset in datasets:
+                    for input_mode in input_modes:
+                        if dataset == "original" and input_mode == "atomic":
+                            continue
+
+                        cmd = [
+                            sys.executable,
+                            str(script),
+                            "--model_name", run["model"],
+                            "--param_mode", "fixed",
+                            "--head_type", head,
+                            "--truncation", trunc,
+                            "--dataset", dataset,
+                            "--input_mode", input_mode,
+                        ]
+
+                        if "unfreeze_ratio" in run:
+                            cmd += ["--unfreeze_ratio", str(run["unfreeze_ratio"])]
+
+                        print("\n[Stage 4] Running:", " ".join(cmd))
+                        subprocess.run(cmd, check=True)
+
+
 def run_encoder_training(train_script: str, model_name: str, param_mode: str) -> None:
     """Invoke one of the encoder training pipelines."""
     project_root = Path(__file__).resolve().parent
@@ -212,6 +276,16 @@ def main():
         action="store_true",
         help="Run Stage 3 predictions"
     )
+    parser.add_argument(
+        "--train-stage-4",
+        dest="train_stage_4",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--predict-stage-4",
+        action="store_true",
+        help="Run Stage 4 predictions"
+    )
 
     args = parser.parse_args()
 
@@ -249,6 +323,10 @@ def main():
     if args.train_stage_3:
         run_stage3_from_config()
         return
+
+    if args.train_stage_4:
+        run_stage4_from_config()
+        return
     
     if args.predict_stage_2:
         project_root = Path(__file__).resolve().parent
@@ -263,6 +341,14 @@ def main():
         script = project_root / "models" / "encoders" / "s3_Loss_and_regularization" / "stage3_predict.py"
         print("[Stage 3] Running prediction script:", script)
         # By default, run predictions for all Stage 3 trained models.
+        subprocess.run([sys.executable, str(script), "--model_dir", "all"], check=True)
+        return
+
+    if args.predict_stage_4:
+        project_root = Path(__file__).resolve().parent
+        script = project_root / "models" / "encoders" / "s4_data_augmentation" / "stage4_predict.py"
+        print("[Stage 4] Running prediction script:", script)
+        # By default, run predictions for all Stage 4 trained models.
         subprocess.run([sys.executable, str(script), "--model_dir", "all"], check=True)
         return
 
