@@ -1,0 +1,53 @@
+Epoch  Progress%         ETA  Training Loss  Validation Loss   Accuracy   F1 Macro   F1 Micro
+---------------------------------------------------------------------------------------------
+    1       5.00      00m19s       1.000800         1.012279   0.587662   0.511262   0.587662
+    2      10.00      05m14s       0.872200         0.988197   0.366883   0.377592   0.366883
+    3      15.00      06m30s       0.792300         0.840500   0.681818   0.575952   0.681818
+    4      20.00      06m51s       0.674700         0.833271   0.672078   0.597462   0.672078
+    5      25.00      06m50s       0.577500         0.859196   0.503247   0.515574   0.503247
+    6      30.00      06m38s       0.487900         0.881647   0.571429   0.569180   0.571429
+    7      35.00      06m20s       0.406300         0.968932   0.620130   0.545005   0.620130
+    8      40.00      05m58s       0.343700         1.159385   0.652597   0.589470   0.652597
+    9      45.00      05m33s       0.271700         1.288033   0.707792   0.616590   0.707792
+   10      50.00      05m06s       0.259600         1.473926   0.685065   0.627395   0.685065
+   11      55.00      04m39s       0.201800         1.562536   0.633117   0.594208   0.633117
+   12      60.00      04m10s       0.169400         1.657876   0.685065   0.598683   0.685065
+   13      65.00      03m40s       0.132700         2.091879   0.662338   0.599117   0.662338
+   14      70.00      03m09s       0.093200         2.312913   0.701299   0.592830   0.701299
+   15      75.00      02m39s       0.077400         2.036504   0.681818   0.650257   0.681818
+   16      80.00      02m07s       0.075600         2.590962   0.655844   0.611566   0.655844
+   17      85.00      01m36s       0.060300         2.835468   0.639610   0.574963   0.639610
+   18      90.00      01m04s       0.045700         2.775464   0.681818   0.616422   0.681818
+   19      95.00      00m32s       0.029000         2.832116   0.707792   0.616464   0.707792
+   20     100.00      00m00s       0.033900         2.846070   0.685065   0.606183   0.685065
+
+[Final evaluation metrics]
+  eval_loss: 2.8461
+  eval_accuracy: 0.6851
+  eval_f1_macro: 0.6062
+  eval_f1_micro: 0.6851
+  eval_f1_weighted: 0.6876
+  eval_runtime: 0.9910
+  eval_samples_per_second: 310.8090
+  eval_steps_per_second: 20.1820
+  epoch: 20.0000
+  step: 4320
+
+[Layer freezing / trainable parameter summary]
+[Freeze] Embedding layer parameters frozen.
+*_Total encoder layers: 12
+*_Unfreezing from layer 3 to 11
+*_Total parameters:     124,647,939
+*__Trainable parameters: 64,383,747
+*__Trainable ratio:      51.65%
+✅ base_model.encoder.layer.10: (16 params)
+✅ base_model.encoder.layer.11: (16 params)
+✅ base_model.encoder.layer.3: (16 params)
+✅ base_model.encoder.layer.4: (16 params)
+✅ base_model.encoder.layer.5: (16 params)
+✅ base_model.encoder.layer.6: (16 params)
+✅ base_model.encoder.layer.7: (16 params)
+✅ base_model.encoder.layer.8: (16 params)
+✅ base_model.encoder.layer.9: (16 params)
+✅ base_model.pooler: (2 params)
+✅ classifier.classifier: (2 params)

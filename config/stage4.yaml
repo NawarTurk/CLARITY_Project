@@ -1,0 +1,61 @@
+# Stage 4: final representation classification
+# Training data augmentation
+
+stage: s4_data_augmentation
+
+dataset:
+  - original
+  - augmented
+
+input_mode:
+  - atomic              # question column
+  - enriched            # Q+ I_Q column
+
+runs:
+  - model: microsoft/deberta-v3-base
+    script: stage4_train_freeze.py
+    unfreeze_ratio: 0.25
+    truncation: head_tail        # head | head_tail
+    classification_head: mlp   # default | mlp | avgpool
+
+  - model: microsoft/mdeberta-v3-base
+    script: stage4_train_freeze.py
+    unfreeze_ratio: 0.25
+    truncation: head
+    classification_head: avgpool
+
+  - model: bert-base-uncased
+    script: stage4_train_lora.py
+    lora_rank: 16
+    truncation: head_tail
+    classification_head: default
+
+  - model: bert-base-multilingual-cased
+    script: stage4_train_freeze.py
+    unfreeze_ratio: 0.25
+    truncation: head
+    classification_head: default
+
+  - model: roberta-base
+    script: stage4_train_freeze.py
+    unfreeze_ratio: 0.75
+    truncation: head_tail
+    classification_head: avgpool
+
+  - model: roberta-large
+    script: stage4_train_freeze.py
+    unfreeze_ratio: 0.25
+    truncation: head
+    classification_head: avgpool
+
+  - model: FacebookAI/xlm-roberta-base
+    script: stage4_train_freeze.py
+    unfreeze_ratio: 0.25
+    truncation: head
+    classification_head: default
+
+  - model: FacebookAI/xlm-roberta-large
+    script: stage4_train_freeze.py
+    unfreeze_ratio: 0.25
+    truncation: head_tail
+    classification_head: default
