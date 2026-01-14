@@ -1,5 +1,5 @@
 Model: bert-base
-Head Type: default
+Head Type: defaultHead
 F1 Macro: 0.578
 F1 Micro: 0.653
 F1 Weighted: 0.662
