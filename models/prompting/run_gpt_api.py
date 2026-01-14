@@ -5,10 +5,14 @@ import os, time
 # ---- configuration ----
 client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
-test_data_path  = "../../datasets/test_dataset.csv"
-prediction_path = "../../results/predictions/prompt"
+# test_data_path  = "../../datasets/test_dataset.csv"
+test_data_path  = os.path.join("..", "..", "datasets", "codebench_evaluation_dataset", "clarity_task_evaluation_dataset.csv")  # for codebench evl data precdictions
+
+# prediction_path = "../../results/predictions/prompt"
+prediction_path = os.path.join("..", "..", "results", "codebench_evaluation_prediction", "prompts") # for codebench evl data precdictions
+
 prompts_path    = "../../prompts"
-prompt_template = "02_t1_fs_base-3-shot_IQ.txt"
+prompt_template = "04_t1_fs_base-27-shot_IQ.txt"
 question_col    = "question"
 
 # ---- model info ----
@@ -18,7 +22,10 @@ provider  = "openai"
 # ---- output file name (consistent with HF style) ----
 prompt_name = os.path.splitext(prompt_template)[0]
 pred_col = f"{llm_name}_{prompt_name}_{provider}"
-out_path = os.path.join(prediction_path, f"{pred_col}.csv")
+
+# out_path = os.path.join(prediction_path, f"{pred_col}.csv")
+out_path = os.path.join(prediction_path, f"{pred_col}", f"{pred_col}.csv") # # for codebench evl data precdictions
+os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
 # ---- load prompt ----
 with open(os.path.join(prompts_path, prompt_template), "r", encoding="utf-8") as f:
@@ -56,7 +63,6 @@ for i, row in df.iterrows():
         continue
 
     # q, a = row[question_col], row["interview_answer"]
-
     q = (
         f"Target question (to evaluate): {row['question']}\n\n"
         f"Full interviewer turn (may contain multiple questions): {row['interview_question']}"

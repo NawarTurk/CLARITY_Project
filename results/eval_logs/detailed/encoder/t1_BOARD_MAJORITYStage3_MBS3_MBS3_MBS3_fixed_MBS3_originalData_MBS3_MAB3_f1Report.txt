@@ -1,0 +1,18 @@
+Model: BOARD-MBS3
+Head Type: fixed
+F1 Macro: 0.695
+F1 Micro: 0.740
+F1 Weighted: 0.741
+Accuracy: 0.740
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.813     0.801     0.807       206
+Clear Non-Reply      0.696     0.696     0.696        23
+    Clear Reply      0.573     0.595     0.584        79
+
+       accuracy                          0.740       308
+      macro avg      0.694     0.697     0.695       308
+   weighted avg      0.743     0.740     0.741       308
+

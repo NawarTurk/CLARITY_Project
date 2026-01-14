@@ -3,11 +3,14 @@ import os, time, pandas as pd
 from tqdm import tqdm
 from huggingface_hub import InferenceClient
 
-test_data_path  = os.path.join("..", "..", "datasets", "test_dataset.csv")
-prediction_path = os.path.join("..", "..", "results", "predictions", "prompt")
+# test_data_path  = os.path.join("..", "..", "datasets", "test_dataset.csv")
+test_data_path  = os.path.join("..", "..", "datasets", "codebench_evaluation_dataset", "clarity_task_evaluation_dataset.csv")  # for codebench evl data precdictions
+
+# prediction_path = os.path.join("..", "..", "results", "predictions", "prompt")
+prediction_path = os.path.join("..", "..", "results", "codebench_evaluation_prediction", "prompts") # for codebench evl data precdictions
+
 prompts_path    = os.path.join("..", "..", "prompts")
 
-# NOTE: you need to check if a certain model is deployed by any HF inference provider
 MODEL_REGISTRY = {
     # ---- LLaMA family ----
     # "llama-3.1-nemotron-253b": ("nvidia/Llama-3_1-Nemotron-Ultra-253B-v1", 'nebius'),
@@ -17,8 +20,8 @@ MODEL_REGISTRY = {
     # # # ---- Qwen family ---- 
     # "qwen3-coder-480b-Instruct": ("Qwen/Qwen3-Coder-480B-A35B-Instruct",  'nebius'), 
 
-    # "qwen3-235b-instruct": ("Qwen/Qwen3-235B-A22B-Instruct-2507",'nebius'), 
-    "qwen3-80b-instruct": ("Qwen/Qwen3-Next-80B-A3B-Instruct", 'novita'), 
+    "qwen3-235b-instruct": ("Qwen/Qwen3-235B-A22B-Instruct-2507",'nebius'), 
+    # "qwen3-80b-instruct": ("Qwen/Qwen3-Next-80B-A3B-Instruct", 'novita'), 
     # "qwen3-32b-instruct": ("Qwen/Qwen3-30B-A3B-Instruct-2507",'nebius'), 
 
     # # ---- Mixtral ---- 
@@ -27,14 +30,17 @@ MODEL_REGISTRY = {
 }
 
 # ---- configuration ----
-prompt_template = "05_t1_fs_base-81-shot_IQ.txt" 
+prompt_template = "02_t1_fs_base-3-shot_IQ.txt" 
 question_col =  "question"  
 hf_token = os.environ["HF_TOKEN"]  # token with “Make calls to Inference Providers”
 
 for llm_name, (model_id, provider) in MODEL_REGISTRY.items():
     prompt_name = os.path.splitext(prompt_template)[0] 
     pred_col = f"{llm_name}_{prompt_name}_{provider}"          # e.g., "qwen-1.8b_01_t1_zs_re2_nebius"
-    out_path = os.path.join(prediction_path, f"{pred_col}.csv")
+    
+    #  out_path = os.path.join(prediction_path, f"{pred_col}.csv")
+    out_path = os.path.join(prediction_path, f"{pred_col}", f"{pred_col}.csv") # # for codebench evl data precdictions
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
     # client
     client   = InferenceClient(model=model_id, token=hf_token, provider=provider)
@@ -48,6 +54,7 @@ for llm_name, (model_id, provider) in MODEL_REGISTRY.items():
             {"role": "system", "content": system_msg},
             {"role": "user",   "content": f"Question: {question}\nAnswer: {answer}\nLabel:"},
         ]
+        
         out = client.chat.completions.create(
             messages=messages, temperature=0, max_tokens=1000
         )
@@ -78,8 +85,7 @@ for llm_name, (model_id, provider) in MODEL_REGISTRY.items():
             p = classify(q, a)
             test_df.at[i, pred_col] = p
 
-        # tqdm.write(f"Question: {a}\nCorrect Label:{row['clarity_label']}\n'Prediction: {p}")
-        tqdm.write(f"Index:: {row['index']}\nCorrect Label:{row['clarity_label']}\nPrediction: {p}\n")
+        # tqdm.write(f"Index:: {row['index']}\nCorrect Label:{row['clarity_label']}\nPrediction: {p}\n") _________put it back for eval
 
         if (i + 1) % 10 == 0:
             os.makedirs(prediction_path, exist_ok=True)
