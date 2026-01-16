@@ -52,3 +52,6 @@ results/models
 
 temp_scripts/
 del/
+
+
+.env
