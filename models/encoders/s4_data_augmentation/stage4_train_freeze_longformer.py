@@ -101,8 +101,8 @@ FIXED_GRID_CONFIG = {
     "loss": "WCE",
 
     # Batch & training control
-    "batch_size": 1,      # per-device batch size
-    "grad_accum": 16,     # effective batch = batch_size * grad_accum
+    "batch_size": 2,      # per-device batch size
+    "grad_accum": 8,     # effective batch = batch_size * grad_accum
     "num_train_epochs": 20,
     "early_stopping_patience": 7,
 
