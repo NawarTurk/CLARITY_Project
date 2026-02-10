@@ -1,0 +1,372 @@
+{
+  "runs": [
+    {
+      "timestamp_utc": "2026-02-10T03:28:29.895137+00:00",
+      "script": "C:\\Users\\Lucas\\Documents\\COMP490_CLARITY\\CLARITY_Project\\models\\encoders\\s4_data_augmentation\\stage4_hpsearch_best_models.py",
+      "args": {
+        "best_models": "C:\\Users\\Lucas\\Documents\\COMP490_CLARITY\\CLARITY_Project\\config\\best_models.yaml",
+        "trials_per_model": 5,
+        "optuna_timeout": null,
+        "optuna_lr_low": 5e-06,
+        "optuna_lr_high": 5e-05,
+        "optuna_batch_sizes": [
+          8,
+          16
+        ],
+        "predict_batch_size": 8,
+        "only": "t1_deberta_en_base_unfreezing25_fixed_multiLayerHead_head-tail_augmentedData_enriched"
+      },
+      "processed_count": 1,
+      "processed_models": [
+        {
+          "name": "t1_deberta_en_base_unfreezing25_fixed_multiLayerHead_head-tail_augmentedData_enriched",
+          "slug": "t1_deberta_en_base_unfreezing25_fixed_multiLayerHead_head-tail_augmentedData_enriched_hpsearch",
+          "base_model": "microsoft/deberta-v3-base",
+          "strategy": "freeze",
+          "head_type": "mlp",
+          "truncation": "head_tail",
+          "dataset": "augmented",
+          "input_mode": "enriched",
+          "trials_per_model": 5,
+          "optuna_lr_low": 5e-06,
+          "optuna_lr_high": 5e-05,
+          "optuna_batch_sizes": [
+            8,
+            16
+          ],
+          "best_params_source": "optuna",
+          "best_params": {
+            "learning_rate": 1.1844319751820392e-05,
+            "batch_size": 8
+          },
+          "final_model_dir": "C:\\Users\\Lucas\\Documents\\COMP490_CLARITY\\CLARITY_Project\\models\\encoders\\s4_data_augmentation\\stage4_trained_models\\t1_deberta_en_base_unfreezing25_fixed_multiLayerHead_head-tail_augmentedData_enriched_hpsearch",
+          "prediction_outputs": {
+            "test": {
+              "path": "C:\\Users\\Lucas\\Documents\\COMP490_CLARITY\\CLARITY_Project\\results\\predictions\\encoder\\stage4\\hpsearch\\t1_deberta_en_base_unfreezing25_fixed_multiLayerHead_head-tail_augmentedData_enriched_hpsearch_test_predictions.csv",
+              "rows": 308,
+              "f1_macro": 0.5914067513797973,
+              "f1_micro": 0.685064935064935,
+              "f1_weighted": 0.6790294578993077,
+              "accuracy": 0.685064935064935
+            },
+            "codebench": {
+              "path": "C:\\Users\\Lucas\\Documents\\COMP490_CLARITY\\CLARITY_Project\\results\\predictions\\encoder\\stage4\\hpsearch\\t1_deberta_en_base_unfreezing25_fixed_multiLayerHead_head-tail_augmentedData_enriched_hpsearch_codebench_predictions.csv",
+              "rows": 237,
+              "f1_macro": 0.0,
+              "f1_micro": 0.0,
+              "f1_weighted": 0.0,
+              "accuracy": 0.0
+            }
+          }
+        }
+      ],
+      "skipped": []
+    },
+    {
+      "timestamp_utc": "2026-02-10T05:07:32.669879+00:00",
+      "script": "C:\\Users\\Lucas\\Documents\\COMP490_CLARITY\\CLARITY_Project\\models\\encoders\\s4_data_augmentation\\stage4_hpsearch_best_models.py",
+      "args": {
+        "best_models": "C:\\Users\\Lucas\\Documents\\COMP490_CLARITY\\CLARITY_Project\\config\\best_models.yaml",
+        "trials_per_model": 5,
+        "optuna_timeout": null,
+        "optuna_lr_low": 5e-06,
+        "optuna_lr_high": 5e-05,
+        "optuna_batch_sizes": [
+          8,
+          16,
+          32
+        ],
+        "predict_batch_size": 8,
+        "only": "t1_bert_en_base_lora16_fixed_defaultHead_head_WCE_originalData_atomic"
+      },
+      "processed_count": 1,
+      "processed_models": [
+        {
+          "name": "t1_bert_en_base_lora16_fixed_defaultHead_head_WCE_originalData_atomic",
+          "slug": "t1_bert_en_base_lora16_fixed_default_head_originalData_atomic_hpsearch",
+          "base_model": "bert-base-uncased",
+          "strategy": "lora",
+          "head_type": "default",
+          "truncation": "head",
+          "dataset": "original",
+          "input_mode": "atomic",
+          "trials_per_model": 5,
+          "optuna_lr_low": 5e-06,
+          "optuna_lr_high": 5e-05,
+          "optuna_batch_sizes": [
+            8,
+            16,
+            32
+          ],
+          "best_params_source": "optuna",
+          "best_params": {
+            "learning_rate": 3.3994812107955665e-05,
+            "batch_size": 8
+          },
+          "final_model_dir": "C:\\Users\\Lucas\\Documents\\COMP490_CLARITY\\CLARITY_Project\\models\\encoders\\s4_data_augmentation\\stage4_trained_models\\t1_bert_en_base_lora16_fixed_default_head_originalData_atomic_hpsearch",
+          "prediction_outputs": {
+            "test": {
+              "path": "C:\\Users\\Lucas\\Documents\\COMP490_CLARITY\\CLARITY_Project\\results\\predictions\\encoder\\stage4\\hpsearch\\t1_bert_en_base_lora16_fixed_default_head_originalData_atomic_hpsearch_test_predictions.csv",
+              "rows": 308,
+              "f1_macro": 0.3308543417366947,
+              "f1_micro": 0.5487012987012987,
+              "f1_weighted": 0.5047082014624031,
+              "accuracy": 0.5487012987012987
+            },
+            "codebench": {
+              "path": "C:\\Users\\Lucas\\Documents\\COMP490_CLARITY\\CLARITY_Project\\results\\predictions\\encoder\\stage4\\hpsearch\\t1_bert_en_base_lora16_fixed_default_head_originalData_atomic_hpsearch_codebench_predictions.csv",
+              "rows": 237,
+              "f1_macro": 0.0,
+              "f1_micro": 0.0,
+              "f1_weighted": 0.0,
+              "accuracy": 0.0
+            }
+          }
+        }
+      ],
+      "skipped": []
+    },
+    {
+      "timestamp_utc": "2026-02-10T06:00:58.121334+00:00",
+      "script": "C:\\Users\\Lucas\\Documents\\COMP490_CLARITY\\CLARITY_Project\\models\\encoders\\s4_data_augmentation\\stage4_hpsearch_best_models.py",
+      "args": {
+        "best_models": "C:\\Users\\Lucas\\Documents\\COMP490_CLARITY\\CLARITY_Project\\config\\best_models.yaml",
+        "trials_per_model": 5,
+        "optuna_timeout": null,
+        "optuna_lr_low": 5e-06,
+        "optuna_lr_high": 5e-05,
+        "optuna_batch_sizes": [
+          8,
+          16,
+          32
+        ],
+        "predict_batch_size": 8,
+        "only": "t1_roberta_en_base_unfreezing75_fixed_avgPoolHead_head-tail_WCE_originalData_atomic"
+      },
+      "processed_count": 1,
+      "processed_models": [
+        {
+          "name": "t1_roberta_en_base_unfreezing75_fixed_avgPoolHead_head-tail_WCE_originalData_atomic",
+          "slug": "t1_roberta_en_base_unfreezing75_fixed_avgPoolHead_head-tail_originalData_atomic_hpsearch",
+          "base_model": "roberta-base",
+          "strategy": "freeze",
+          "head_type": "avgpool",
+          "truncation": "head_tail",
+          "dataset": "original",
+          "input_mode": "atomic",
+          "trials_per_model": 5,
+          "optuna_lr_low": 5e-06,
+          "optuna_lr_high": 5e-05,
+          "optuna_batch_sizes": [
+            8,
+            16,
+            32
+          ],
+          "best_params_source": "optuna",
+          "best_params": {
+            "learning_rate": 1.9956529392808402e-05,
+            "batch_size": 32
+          },
+          "final_model_dir": "C:\\Users\\Lucas\\Documents\\COMP490_CLARITY\\CLARITY_Project\\models\\encoders\\s4_data_augmentation\\stage4_trained_models\\t1_roberta_en_base_unfreezing75_fixed_avgPoolHead_head-tail_originalData_atomic_hpsearch",
+          "prediction_outputs": {
+            "test": {
+              "path": "C:\\Users\\Lucas\\Documents\\COMP490_CLARITY\\CLARITY_Project\\results\\predictions\\encoder\\stage4\\hpsearch\\t1_roberta_en_base_unfreezing75_fixed_avgPoolHead_head-tail_originalData_atomic_hpsearch_test_predictions.csv",
+              "rows": 308,
+              "f1_macro": 0.6284224844520169,
+              "f1_micro": 0.6590909090909091,
+              "f1_weighted": 0.6695892977681328,
+              "accuracy": 0.6590909090909091
+            },
+            "codebench": {
+              "path": "C:\\Users\\Lucas\\Documents\\COMP490_CLARITY\\CLARITY_Project\\results\\predictions\\encoder\\stage4\\hpsearch\\t1_roberta_en_base_unfreezing75_fixed_avgPoolHead_head-tail_originalData_atomic_hpsearch_codebench_predictions.csv",
+              "rows": 237,
+              "f1_macro": 0.0,
+              "f1_micro": 0.0,
+              "f1_weighted": 0.0,
+              "accuracy": 0.0
+            }
+          }
+        }
+      ],
+      "skipped": []
+    },
+    {
+      "timestamp_utc": "2026-02-10T07:24:05.620868+00:00",
+      "script": "C:\\Users\\Lucas\\Documents\\COMP490_CLARITY\\CLARITY_Project\\models\\encoders\\s4_data_augmentation\\stage4_hpsearch_best_models.py",
+      "args": {
+        "best_models": "C:\\Users\\Lucas\\Documents\\COMP490_CLARITY\\CLARITY_Project\\config\\best_models.yaml",
+        "trials_per_model": 5,
+        "optuna_timeout": null,
+        "optuna_lr_low": 5e-06,
+        "optuna_lr_high": 5e-05,
+        "optuna_batch_sizes": [
+          8,
+          16,
+          32
+        ],
+        "predict_batch_size": 8,
+        "only": "t1_roberta_en_large_unfreezing25_fixed_avgPoolHead_head_WCE_originalData_atomic"
+      },
+      "processed_count": 1,
+      "processed_models": [
+        {
+          "name": "t1_roberta_en_large_unfreezing25_fixed_avgPoolHead_head_WCE_originalData_atomic",
+          "slug": "t1_roberta_en_large_unfreezing25_fixed_avgPoolHead_head_originalData_atomic_hpsearch",
+          "base_model": "roberta-large",
+          "strategy": "freeze",
+          "head_type": "avgpool",
+          "truncation": "head",
+          "dataset": "original",
+          "input_mode": "atomic",
+          "trials_per_model": 5,
+          "optuna_lr_low": 5e-06,
+          "optuna_lr_high": 5e-05,
+          "optuna_batch_sizes": [
+            8,
+            16,
+            32
+          ],
+          "best_params_source": "optuna",
+          "best_params": {
+            "learning_rate": 1.0074238942079319e-05,
+            "batch_size": 8
+          },
+          "final_model_dir": "C:\\Users\\Lucas\\Documents\\COMP490_CLARITY\\CLARITY_Project\\models\\encoders\\s4_data_augmentation\\stage4_trained_models\\t1_roberta_en_large_unfreezing25_fixed_avgPoolHead_head_originalData_atomic_hpsearch",
+          "prediction_outputs": {
+            "test": {
+              "path": "C:\\Users\\Lucas\\Documents\\COMP490_CLARITY\\CLARITY_Project\\results\\predictions\\encoder\\stage4\\hpsearch\\t1_roberta_en_large_unfreezing25_fixed_avgPoolHead_head_originalData_atomic_hpsearch_test_predictions.csv",
+              "rows": 308,
+              "f1_macro": 0.5884453964111825,
+              "f1_micro": 0.6461038961038961,
+              "f1_weighted": 0.6568550166823055,
+              "accuracy": 0.6461038961038961
+            },
+            "codebench": {
+              "path": "C:\\Users\\Lucas\\Documents\\COMP490_CLARITY\\CLARITY_Project\\results\\predictions\\encoder\\stage4\\hpsearch\\t1_roberta_en_large_unfreezing25_fixed_avgPoolHead_head_originalData_atomic_hpsearch_codebench_predictions.csv",
+              "rows": 237,
+              "f1_macro": 0.0,
+              "f1_micro": 0.0,
+              "f1_weighted": 0.0,
+              "accuracy": 0.0
+            }
+          }
+        }
+      ],
+      "skipped": []
+    },
+    {
+      "timestamp_utc": "2026-02-10T13:57:37.789591+00:00",
+      "script": "C:\\Users\\Lucas\\Documents\\COMP490_CLARITY\\CLARITY_Project\\models\\encoders\\s4_data_augmentation\\stage4_hpsearch_best_models.py",
+      "args": {
+        "best_models": "C:\\Users\\Lucas\\Documents\\COMP490_CLARITY\\CLARITY_Project\\config\\best_models.yaml",
+        "trials_per_model": 5,
+        "optuna_timeout": null,
+        "optuna_lr_low": 5e-06,
+        "optuna_lr_high": 5e-05,
+        "optuna_batch_sizes": [
+          8,
+          16,
+          32
+        ],
+        "predict_batch_size": 8,
+        "only": "t1_bert_en_base_lora16_fixed_defaultHead_head_WCE_originalData_atomic"
+      },
+      "processed_count": 1,
+      "processed_models": [
+        {
+          "name": "t1_bert_en_base_lora16_fixed_defaultHead_head_WCE_originalData_atomic",
+          "slug": "t1_bert_en_base_lora16_fixed_default_head_originalData_atomic_hpsearch",
+          "base_model": "bert-base-uncased",
+          "strategy": "lora",
+          "head_type": "default",
+          "truncation": "head",
+          "dataset": "original",
+          "input_mode": "atomic",
+          "trials_per_model": 5,
+          "optuna_lr_low": 5e-06,
+          "optuna_lr_high": 5e-05,
+          "optuna_batch_sizes": [
+            8,
+            16,
+            32
+          ],
+          "best_params_source": "optuna",
+          "best_params": {
+            "learning_rate": 3.3994812107955665e-05,
+            "batch_size": 8
+          },
+          "optuna": {
+            "best_value": 0.6081470057009829,
+            "trials": [
+              {
+                "number": 0,
+                "state": "TrialState.COMPLETE",
+                "value": 0.48545084015018486,
+                "params": {
+                  "learning_rate": 1.1844319751820392e-05,
+                  "batch_size": 8.0
+                }
+              },
+              {
+                "number": 1,
+                "state": "TrialState.COMPLETE",
+                "value": 0.35355931879287383,
+                "params": {
+                  "learning_rate": 7.161246859115122e-06,
+                  "batch_size": 32.0
+                }
+              },
+              {
+                "number": 2,
+                "state": "TrialState.COMPLETE",
+                "value": 0.5061557143524357,
+                "params": {
+                  "learning_rate": 1.9956529392808402e-05,
+                  "batch_size": 32.0
+                }
+              },
+              {
+                "number": 3,
+                "state": "TrialState.COMPLETE",
+                "value": 0.6081470057009829,
+                "params": {
+                  "learning_rate": 3.3994812107955665e-05,
+                  "batch_size": 8.0
+                }
+              },
+              {
+                "number": 4,
+                "state": "TrialState.COMPLETE",
+                "value": 0.4898817368269477,
+                "params": {
+                  "learning_rate": 1.0074238942079319e-05,
+                  "batch_size": 8.0
+                }
+              }
+            ]
+          },
+          "final_model_dir": "C:\\Users\\Lucas\\Documents\\COMP490_CLARITY\\CLARITY_Project\\models\\encoders\\s4_data_augmentation\\stage4_trained_models\\t1_bert_en_base_lora16_fixed_default_head_originalData_atomic_hpsearch",
+          "prediction_outputs": {
+            "test": {
+              "path": "C:\\Users\\Lucas\\Documents\\COMP490_CLARITY\\CLARITY_Project\\results\\predictions\\encoder\\stage4\\hpsearch\\t1_bert_en_base_lora16_fixed_default_head_originalData_atomic_hpsearch_test_predictions.csv",
+              "rows": 308,
+              "f1_macro": 0.32848718158735357,
+              "f1_micro": 0.5454545454545454,
+              "f1_weighted": 0.5054464026431428,
+              "accuracy": 0.5454545454545454
+            },
+            "codebench": {
+              "path": "C:\\Users\\Lucas\\Documents\\COMP490_CLARITY\\CLARITY_Project\\results\\predictions\\encoder\\stage4\\hpsearch\\t1_bert_en_base_lora16_fixed_default_head_originalData_atomic_hpsearch_codebench_predictions.csv",
+              "rows": 237,
+              "f1_macro": 0.0,
+              "f1_micro": 0.0,
+              "f1_weighted": 0.0,
+              "accuracy": 0.0
+            }
+          }
+        }
+      ],
+      "skipped": []
+    }
+  ]
+}
