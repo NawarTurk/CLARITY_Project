@@ -1,0 +1,44 @@
+Epoch  Progress%         ETA  Training Loss  Validation Loss   Accuracy   F1 Macro   F1 Micro
+---------------------------------------------------------------------------------------------
+    1       5.00      14m44s      16.660700         0.954042   0.493506   0.377089   0.493506
+    2      10.00    2h37m38s      15.594900         0.961029   0.616883   0.344190   0.616883
+    3      15.00    3h15m24s      14.362500         0.906162   0.568182   0.476166   0.568182
+    4      20.00    3h26m36s      12.676100         0.797025   0.688312   0.500190   0.688312
+    5      25.00    3h26m28s      11.524600         0.777274   0.694805   0.609187   0.694805
+    6      30.00    3h20m20s      10.722600         0.780973   0.678571   0.628345   0.678571
+    7      35.00    3h10m33s      10.309300         0.779715   0.655844   0.580287   0.655844
+    8      40.00    2h59m12s       9.799700         0.854493   0.457792   0.466486   0.457792
+    9      45.00    2h47m50s       9.679200         0.782763   0.672078   0.591002   0.672078
+   10      50.00    2h35m10s       9.209800         0.804670   0.620130   0.574570   0.620130
+   11      55.00    2h20m53s       8.808100         0.805491   0.662338   0.582428   0.662338
+
+[Best model snapshot (selected by eval_f1_macro)]
+  best_epoch: 6.0
+  best_step: 360
+  best_eval_f1_macro: 0.6283448990986679
+
+[Best restored evaluation metrics]
+  eval_loss: 0.7810
+  eval_accuracy: 0.6786
+  eval_f1_macro: 0.6283
+  eval_f1_micro: 0.6786
+  eval_f1_weighted: 0.6842
+  eval_runtime: 46.5810
+  eval_samples_per_second: 6.6120
+  eval_steps_per_second: 1.6530
+  epoch: 11.0000
+  step: 660
+
+[Layer freezing / trainable parameter summary]
+[Freeze] Embedding layer parameters frozen.
+*_Total encoder layers: 12
+*_Unfreezing from layer 9 to 11
+*_Total parameters:       149,252,355
+*__Trainable parameters:  27,762,435
+*__Trainable ratio:       18.60%
+✅ base_model.encoder.layer.10: (22 params)
+✅ base_model.encoder.layer.11: (22 params)
+✅ base_model.encoder.layer.9: (22 params)
+✅ base_model.pooler: (2 params)
+✅ classifier.fc1: (2 params)
+✅ classifier.fc2: (2 params)
