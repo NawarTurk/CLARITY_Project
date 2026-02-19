@@ -1,7 +1,5 @@
-# models/encoders/longformer_experiments/ablations/stage3_train_longformer_ablations.py
-#
-# Longformer Ablation Study (Stage 3 placement)
-# - Fixed training configuration (no hyperparameter grid)
+## Longformer Ablation Study (Stage 3 placement)
+
 # - Ablations over:
 #     (1) classification_head: default vs multilayer (MLPHead)
 #     (2) input_order: 3 tagged layouts using [Q], [CTX], [A]
@@ -21,7 +19,7 @@
 #       --classification_head default \
 #       --input_order question+context+answer \
 #       --global_attention cls_plus_question \
-#       --dataset original \
+#       --dataset augmented\
 #       --truncation head_tail
 
 
