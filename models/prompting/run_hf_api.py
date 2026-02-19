@@ -2,9 +2,11 @@
 import os, time, pandas as pd
 from tqdm import tqdm
 from huggingface_hub import InferenceClient
+from dotenv import load_dotenv
+load_dotenv()
 
-# test_data_path  = os.path.join("..", "..", "datasets", "test_dataset.csv")
-test_data_path  = os.path.join("..", "..", "datasets", "codebench_evaluation_dataset", "clarity_task_evaluation_dataset.csv")  # for codebench evl data precdictions
+# test_data_path  = os.path.join("..", "..", "datasets", "test_dataset_with_president.csv")
+test_data_path  = os.path.join("..", "..", "datasets", "codebench_evaluation_dataset", "clarity_task_evaluation_dataset_with_president.csv")  # for codebench evl data precdictions
 
 # prediction_path = os.path.join("..", "..", "results", "predictions", "prompt")
 prediction_path = os.path.join("..", "..", "results", "codebench_evaluation_prediction", "prompts") # for codebench evl data precdictions
@@ -20,7 +22,7 @@ MODEL_REGISTRY = {
     # # # ---- Qwen family ---- 
     # "qwen3-coder-480b-Instruct": ("Qwen/Qwen3-Coder-480B-A35B-Instruct",  'nebius'), 
 
-    "qwen3-235b-instruct": ("Qwen/Qwen3-235B-A22B-Instruct-2507",'nebius'), 
+    "qwen3-235b-instruct": ("Qwen/Qwen3-235B-A22B-Instruct-2507",'together'), # nebius till feb1
     # "qwen3-80b-instruct": ("Qwen/Qwen3-Next-80B-A3B-Instruct", 'novita'), 
     # "qwen3-32b-instruct": ("Qwen/Qwen3-30B-A3B-Instruct-2507",'nebius'), 
 
@@ -30,7 +32,7 @@ MODEL_REGISTRY = {
 }
 
 # ---- configuration ----
-prompt_template = "02_t1_fs_base-3-shot_IQ.txt" 
+prompt_template = "04_t1_fs_base-27-shot_IQ-label-details-president.txt" 
 question_col =  "question"  
 hf_token = os.environ["HF_TOKEN"]  # token with “Make calls to Inference Providers”
 
@@ -49,12 +51,24 @@ for llm_name, (model_id, provider) in MODEL_REGISTRY.items():
     with open(os.path.join(prompts_path, prompt_template), "r", encoding="utf-8") as f:
         system_msg = f.read().strip()
 
-    def classify(question: str, answer: str) -> str:
+
+    def classify(target_q: str, full_q: str, answer: str, president: str = None) -> str:
+        user_msg = (
+            f"Target question (to evaluate): {target_q}\n"
+        )
+        # optional metadata
+        if president and isinstance(president, str) and president.strip():
+            user_msg += f"Speaker: {president}\n"
+
+        user_msg += (
+            f"Full interviewer turn (may contain multiple questions): {full_q}\n"
+            f"Answer: {answer}\n"
+            f"Label:"
+        )
         messages = [
             {"role": "system", "content": system_msg},
-            {"role": "user",   "content": f"Question: {question}\nAnswer: {answer}\nLabel:"},
+            {"role": "user", "content": user_msg},
         ]
-        
         out = client.chat.completions.create(
             messages=messages, temperature=0, max_tokens=1000
         )
@@ -69,23 +83,24 @@ for llm_name, (model_id, provider) in MODEL_REGISTRY.items():
     for i, row in tqdm(test_df.iterrows(), total=len(test_df), desc="Processing"):
         if pd.notna(row[pred_col]):    
             continue  
-        
-        # q = row[question_col] 
-        q = (
-            f"Target question (to evaluate): {row['question']}\n\n"
-            f"Full interviewer turn (may contain multiple questions): {row['interview_question']}"
-        )
-        a = row["interview_answer"]
+
+        target_q = row["question"]
+        full_q = row["interview_question"]
+        answer = row["interview_answer"]
+        president = row.get("president")
+        print(president)
+        if pd.isna(president):
+            president = None
 
         try:
-            p = classify(q, a)
-            test_df.at[i, pred_col] = p
+            pred = classify(target_q, full_q, answer, president=president)
+            test_df.at[i, pred_col] = pred
         except Exception:
             time.sleep(2)
-            p = classify(q, a)
-            test_df.at[i, pred_col] = p
+            pred = classify(target_q, full_q, answer, president=president)
+            test_df.at[i, pred_col] = pred
 
-        # tqdm.write(f"Index:: {row['index']}\nCorrect Label:{row['clarity_label']}\nPrediction: {p}\n") _________put it back for eval
+        tqdm.write(f"Index:: {row['index']}\nCorrect Label:{row['clarity_label']}\nPrediction: {pred}\n") #_________put it back for eval
 
         if (i + 1) % 10 == 0:
             os.makedirs(prediction_path, exist_ok=True)

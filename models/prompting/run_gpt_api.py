@@ -1,18 +1,20 @@
 from openai import OpenAI
 import pandas as pd
 import os, time
+from dotenv import load_dotenv
+load_dotenv()
 
 # ---- configuration ----
 client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
-# test_data_path  = "../../datasets/test_dataset.csv"
+# test_data_path  = "../../datasets/test_dataset_with_president.csv"
 test_data_path  = os.path.join("..", "..", "datasets", "codebench_evaluation_dataset", "clarity_task_evaluation_dataset.csv")  # for codebench evl data precdictions
 
 # prediction_path = "../../results/predictions/prompt"
 prediction_path = os.path.join("..", "..", "results", "codebench_evaluation_prediction", "prompts") # for codebench evl data precdictions
 
 prompts_path    = "../../prompts"
-prompt_template = "04_t1_fs_base-27-shot_IQ.txt"
+prompt_template = "04_t1_fs_base-27-shot_IQ-label-details.txt"
 question_col    = "question"
 
 # ---- model info ----
@@ -37,20 +39,30 @@ if pred_col not in df.columns:
     df[pred_col] = None
 
 # ---- classify function ----
-def classify(question: str, answer: str) -> str:
+
+def classify(target_q: str, full_q: str, answer: str) -> str:
+    user_msg = (
+            f"Target question (to evaluate): {target_q}\n"
+            f"Full interviewer turn (may contain multiple questions): {full_q}\n"
+            f"Answer: {answer}\n"
+            f"Label:"
+        )
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_msg},
+    ]
+
     try:
         completion = client.chat.completions.create(
             model=llm_name,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user",   "content": f"Question: {question}\nAnswer: {answer}\nLabel:"},
-            ],
+            messages=messages,
+
             # temperature=0,
             max_completion_tokens=1500,
         )
-        print("RESPONSE:", completion)
-        print("CHOICE:", completion.choices[0].message)
-        print("CONTENT:", completion.choices[0].message.content)
+        # print("RESPONSE:", completion)
+        # print("CHOICE:", completion.choices[0].message)
+        # print("CONTENT:", completion.choices[0].message.content)
         return (completion.choices[0].message.content or "").strip()
     except Exception as e:
         print(f"⚠️ Error: {e}")
@@ -62,16 +74,14 @@ for i, row in df.iterrows():
     if pd.notna(row[pred_col]):
         continue
 
-    # q, a = row[question_col], row["interview_answer"]
-    q = (
-        f"Target question (to evaluate): {row['question']}\n\n"
-        f"Full interviewer turn (may contain multiple questions): {row['interview_question']}"
-    )
-    a = row["interview_answer"]
+    target_q = row["question"]
+    full_q = row["interview_question"]
+    answer = row["interview_answer"]
 
-    p = classify(q, a)
-    df.at[i, pred_col] = p
-    print(f"Index:: {row['index']}\nCorrect Label: {row['clarity_label']}\nPrediction: {p}\n")
+
+    pred = classify(target_q, full_q, answer)
+    df.at[i, pred_col] = pred
+    print(f"Index:: {row['index']}\nCorrect Label: {row['clarity_label']}\nPrediction: {pred}\n")
 
     if (i + 1) % 10 == 0:
         os.makedirs(prediction_path, exist_ok=True)
