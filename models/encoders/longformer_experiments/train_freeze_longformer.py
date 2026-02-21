@@ -1,27 +1,10 @@
-## Longformer Ablation Study (Stage 3 placement)
-
-# - Ablations over:
-#     (1) classification_head: default vs multilayer (MLPHead)
-#     (2) input_order: 3 tagged layouts using [Q], [CTX], [A]
-#     (3) global_attention: cls_only vs cls_plus_question (tag-based [Q] spans)
-#
-# Saves everything UNDER THIS FOLDER (stage3):
-#   longformer_experiments/ablations/
-#       tmp_checkpoints/<slug>/
-#       stage3_trained_models/<slug>/
-#
-# Examples:
-#   Run full ablations (12 runs):
-#     python stage3_train_longformer_ablations.py --param_mode fixed --grid_search --dataset original --truncation head
-#
-#   Run single ablation:
-#     python stage3_train_longformer_ablations.py --param_mode fixed --run_one \
-#       --classification_head default \
-#       --input_order question+context+answer \
-#       --global_attention cls_plus_question \
-#       --dataset augmented\
-#       --truncation head_tail
-
+# stage4_train_freeze_longformer.py
+# Train 3 fixed runs with different Longformer attention windows: 612, 768, 1024
+# - Fixed hyperparams: lr=2e-5, wd=0.01, warmup_ratio=0.06
+# - Fixed ablation choices (BEST): multilayer head, CTX+Q+A, CLS-only global attention
+# - Saves ONLY best model (by eval_f1_macro) for each window
+# - Writes *_training-progress.txt that includes best snapshot + best-restored metrics
+# - Produces a summary CSV across windows
 
 import sys, os
 sys.path.append(
@@ -40,9 +23,9 @@ import time
 import random
 import re
 import shutil
+import json
 from pathlib import Path
 from typing import Dict, Optional, Tuple, Any, List
-from itertools import product
 from collections import defaultdict
 
 import numpy as np
@@ -68,64 +51,56 @@ from transformers import (
     set_seed,
 )
 from transformers.utils import logging as hf_logging
-
 import matplotlib.pyplot as plt
 
 
 # -----------------------------------------------------------------------------
-# 0) Fixed config + ablation space
+# Fixed config (single source of truth)
 # -----------------------------------------------------------------------------
-
-LONGFORMER_MODEL = "allenai/longformer-base-4096"
-
-# Tags used to construct inputs & locate question spans for global attention
-SPECIAL_TOKENS = ["[Q]", "[CTX]", "[A]"]
-
-# Fixed training configuration (Nawar spec)
 FIXED_GRID_CONFIG = {
     # Model / tokenizer
-    "tokenizer": LONGFORMER_MODEL,
+    "tokenizer": "allenai/longformer-base-4096",
     "max_sequence_length": 2048,
-    "attention_window": 512,
+
+    # ===== Fixed ablation choices (BEST) =====
+    "classification_head": "multilayer",
+    "input_order": "context+question+answer",
+    "global_attention": "cls_only",
+    # ========================================
 
     # Optimization
     "optimizer": "AdamW",
     "learning_rate": 2e-5,
     "weight_decay": 0.01,
-    "scheduler": "linear_with_warmup",
+
+    # Warmup (fixed)
+    "lr_scheduler_type": "linear",
+    "warmup_ratio": 0.06,
 
     # Regularization & loss
     "dropout": 0.1,
     "loss": "WCE",
 
     # Batch & training control
-    "batch_size": 2,      # per-device batch size
-    "grad_accum": 8,     # effective batch = batch_size * grad_accum
-    "num_train_epochs": 20,
+    "per_device_batch_size": 1,
+    "gradient_accumulation_steps": 16,  # effective batch size = 16
     "early_stopping_patience": 7,
 
-    # Unfreezing strategy (keep same behavior as your other stages)
+    # Epochs (fixed)
+    "num_train_epochs": 20,
+
+    # Fine-tuning strategy (partial unfreeze)
     "unfreeze_ratio": 0.25,
 }
 
-# Ablation dimensions (2 x 3 x 2 = 12)
-ABLATION_SPACE = {
-    "classification_head": ["default", "multilayer"],
-    "input_order": [
-        "context+question+answer",
-        "question+context+answer",
-        "question+context+answer+question_repeat",
-    ],
-    "global_attention": ["cls_only", "cls_plus_question"],
-}
+ATTENTION_WINDOWS_TO_RUN = [612, 768, 1024]  # requested
 
 
 # -----------------------------------------------------------------------------
-# 1) Setup
+# Dataset paths / constants
 # -----------------------------------------------------------------------------
 SEED = 42
 USE_EARLY_STOPPING = True
-EARLY_STOPPING_PATIENCE = int(FIXED_GRID_CONFIG.get("early_stopping_patience", 7))
 
 TRAIN_CSV_PATH = os.path.join("datasets", "train_dataset.csv")
 TEST_CSV_PATH = os.path.join("datasets", "test_dataset.csv")
@@ -135,36 +110,19 @@ AUGMENTED_TRAIN_CSV_PATH = os.path.join(
     "train_dataset_augmented_filtered.csv",
 )
 
+TARGET_COLUMN = "clarity_label"
+Q_COL = "question"
+CTX_COL = "interview_question"
+A_COL = "interview_answer"
+
 TASK_ID = "t1"
 TUNE_STRATEGY = "partial"
-
-# Plots + summary (kept under results/, like your other stages)
-PLOTS_DIR = Path("results") / "plots" / "encoder"
-SUMMARY_CSV_PATH = Path("results") / "eval_logs" / "detailed" / "encoder" / "stage3_longformer_ablation_summary.csv"
-
-# Defaults for CLI (remain overridable)
-DEFAULT_CONFIG = {
-    "num_train_epochs": int(FIXED_GRID_CONFIG["num_train_epochs"]),
-    "batch_size": int(FIXED_GRID_CONFIG["batch_size"]),
-    "learning_rate": float(FIXED_GRID_CONFIG["learning_rate"]),
-    "weight_decay": float(FIXED_GRID_CONFIG["weight_decay"]),
-    "grad_accum": int(FIXED_GRID_CONFIG["grad_accum"]),
-    "dropout": float(FIXED_GRID_CONFIG["dropout"]),
-    "max_length": int(FIXED_GRID_CONFIG["max_sequence_length"]),
-    "attention_window": int(FIXED_GRID_CONFIG["attention_window"]),
-    "unfreeze_ratio": float(FIXED_GRID_CONFIG["unfreeze_ratio"]),
-}
-
-TARGET_COLUMN = "clarity_label"
-Q_KEY = "question"
-A_KEY = "interview_answer"
-CTX_KEY = "interview_question"  # context
 
 hf_logging.set_verbosity_error()
 
 
 # -----------------------------------------------------------------------------
-# 2) Utilities
+# Helpers
 # -----------------------------------------------------------------------------
 def _fs_safe_model_name(name: str) -> str:
     normalized = (
@@ -183,42 +141,19 @@ def _get_meta_fallback(model_name: str) -> Dict[str, str]:
     return {"arch": "longformer", "lang": "en", "size": "base"}
 
 
-def _resolve_model_name(_user_name: str) -> str:
-    return LONGFORMER_MODEL
-
-
-def _normalize_global_attention(mode: str) -> str:
-    m = (mode or "").strip().lower()
-    if m in ("cls", "cls_only"):
-        return "cls_only"
-    if m in ("cls_question", "cls_plus_question", "cls_plus_q", "clsq"):
-        return "cls_plus_question"
-    raise ValueError(f"Unknown global_attention mode: {mode}")
-
-
-def _short_input_order_tag(order: str) -> str:
-    mapping = {
-        "context+question+answer": "CTX-Q-A",
-        "question+context+answer": "Q-CTX-A",
-        "question+context+answer+question_repeat": "Q-CTX-A-Q",
-    }
-    return mapping.get(order, _fs_safe_model_name(order))
-
-
 def _build_output_slug(
     model_name: str,
-    param_mode: str,
-    *,
-    unfreeze_ratio: Optional[float] = None,
-    truncation: Optional[str] = None,
-    dataset: Optional[str] = None,
-    classification_head: Optional[str] = None,
-    input_order: Optional[str] = None,
-    global_attention: Optional[str] = None,
-    max_length: Optional[int] = None,
-    learning_rate: Optional[float] = None,
-    dropout: Optional[float] = None,
-    attention_window: Optional[int] = None,
+    truncation: str,
+    dataset: str,
+    max_length: int,
+    attention_window: int,
+    learning_rate: float,
+    weight_decay: float,
+    warmup_ratio: float,
+    dropout: float,
+    classification_head: str,
+    input_order: str,
+    global_attention: str,
 ) -> str:
     meta = _get_meta_fallback(model_name)
 
@@ -230,50 +165,28 @@ def _build_output_slug(
     else:
         trunc_tag = "notrunc"
 
-    pct = int(round(100 * float(unfreeze_ratio))) if unfreeze_ratio is not None else None
-    strategy_tag = f"unfreezing{pct}" if pct is not None else TUNE_STRATEGY
+    head_tag = "defaultHead" if classification_head == "default" else "multilayerHead"
 
-    head_tag = (classification_head or "default").strip().lower()
-    if head_tag == "default":
-        head_tag = "defaultHead"
-    elif head_tag == "multilayer":
-        head_tag = "multilayerHead"
+    if input_order == "context+question+answer":
+        order_tag = "CTX-Q-A"
+    elif input_order == "question+context+answer":
+        order_tag = "Q-CTX-A"
     else:
-        head_tag = _fs_safe_model_name(head_tag)
+        order_tag = "Q-CTX-A-Q"
+
+    gtag = "cls" if global_attention == "cls_only" else "clsQ"
+    dataset_tag = "originalData" if dataset == "original" else "augmentedData"
+
+    lr_tag = f"{learning_rate:.0e}".replace("+", "")
+    wd_tag = f"{weight_decay:.3f}".rstrip("0").rstrip(".")
+    wu_tag = f"{warmup_ratio:.3f}".rstrip("0").rstrip(".")
 
     slug = (
         f"{TASK_ID}_{meta['arch']}_{meta['lang']}_{meta['size']}"
-        f"_{strategy_tag}_{param_mode}_{head_tag}_{trunc_tag}"
+        f"_{TUNE_STRATEGY}_fixed_{head_tag}_{trunc_tag}_{dataset_tag}"
+        f"_{order_tag}_gattn{gtag}_L{int(max_length)}_aw{int(attention_window)}"
+        f"_lr{lr_tag}_wd{wd_tag}_wu{wu_tag}_do{dropout:.2f}"
     )
-
-    if dataset:
-        ds = dataset
-        if ds == "original":
-            ds = "originalData"
-        elif ds == "augmented":
-            ds = "augmentedData"
-        slug = f"{slug}_{ds}"
-
-    if input_order:
-        slug = f"{slug}_ord{_short_input_order_tag(input_order)}"
-
-    if global_attention:
-        g = _normalize_global_attention(global_attention)
-        slug = f"{slug}_gattn{g}"
-
-    if max_length:
-        slug = f"{slug}_L{int(max_length)}"
-
-    if attention_window:
-        slug = f"{slug}_aw{int(attention_window)}"
-
-    if learning_rate is not None:
-        lr_tag = f"{learning_rate:.0e}".replace("+", "")
-        slug = f"{slug}_lr{lr_tag}"
-
-    if dropout is not None:
-        slug = f"{slug}_do{dropout:.2f}"
-
     return _fs_safe_model_name(slug)
 
 
@@ -313,8 +226,11 @@ def compute_metrics(eval_pred):
 
 
 def _epoch_to_int(epoch_value) -> int:
-    epoch_float = float(epoch_value)
-    epoch_idx = int(math.floor(epoch_float + 0.5))
+    try:
+        epoch_float = float(epoch_value)
+    except (TypeError, ValueError):
+        return 1
+    epoch_idx = int(math.floor(epoch_float + 1e-9))
     return max(1, epoch_idx)
 
 
@@ -354,7 +270,7 @@ def _print_metrics_block(title: str, metrics: Optional[Dict[str, float]], *, ste
             continue
         val = metrics[key]
         if isinstance(val, float):
-            print(f"  {key}: {val:.4f}")
+            print(f"  {key}: {val:.6f}")
         else:
             print(f"  {key}: {val}")
 
@@ -384,7 +300,7 @@ def _write_metrics_block(f, title: str, metrics: Optional[Dict[str, float]], *, 
             continue
         val = metrics[key]
         if isinstance(val, float):
-            f.write(f"  {key}: {val:.4f}\n")
+            f.write(f"  {key}: {val:.6f}\n")
         else:
             f.write(f"  {key}: {val}\n")
 
@@ -392,8 +308,51 @@ def _write_metrics_block(f, title: str, metrics: Optional[Dict[str, float]], *, 
         f.write(f"  step: {step}\n")
 
 
+def _effective_len(max_length: int, attention_window: int) -> int:
+    rem = max_length % attention_window
+    if rem == 0:
+        return max_length
+    return max_length + (attention_window - rem)
+
+
 # -----------------------------------------------------------------------------
-# 3) Best in-memory restore callback
+# MLP head (multilayer)
+# -----------------------------------------------------------------------------
+class MLPHead(nn.Module):
+    def __init__(self, hidden_size: int, num_labels: int = 3, dropout: float = 0.1):
+        super().__init__()
+        self.dropout1 = nn.Dropout(dropout)
+        self.fc1 = nn.Linear(hidden_size, hidden_size)
+        self.act = nn.GELU()
+        self.dropout2 = nn.Dropout(dropout)
+        self.fc2 = nn.Linear(hidden_size, num_labels)
+
+    def forward(self, pooled: torch.Tensor) -> torch.Tensor:
+        x = self.dropout1(pooled)
+        x = self.fc1(x)
+        x = self.act(x)
+        x = self.dropout2(x)
+        return self.fc2(x)
+
+
+class SequenceMLPHead(nn.Module):
+    """
+    Supports both pooled_output [B,H] and sequence_output [B,L,H].
+    """
+    def __init__(self, hidden_size: int, num_labels: int, dropout: float = 0.1):
+        super().__init__()
+        self.mlp = MLPHead(hidden_size=hidden_size, num_labels=num_labels, dropout=dropout)
+
+    def forward(self, features: torch.Tensor, **kwargs) -> torch.Tensor:
+        if features.dim() == 3:
+            pooled = features[:, 0, :]
+        else:
+            pooled = features
+        return self.mlp(pooled)
+
+
+# -----------------------------------------------------------------------------
+# Early-stopping + best-restore callback
 # -----------------------------------------------------------------------------
 class BestModelInMemoryCallback(TrainerCallback):
     def __init__(self, metric_name: str = "eval_f1_macro", patience: int = 5, greater_is_better: bool = True):
@@ -415,9 +374,7 @@ class BestModelInMemoryCallback(TrainerCallback):
         return value > best if self.greater_is_better else value < best
 
     def on_evaluate(self, args, state, control, metrics=None, **kwargs):
-        if not metrics:
-            return control
-        if self.metric_name not in metrics:
+        if not metrics or self.metric_name not in metrics:
             return control
 
         score = float(metrics[self.metric_name])
@@ -439,8 +396,8 @@ class BestModelInMemoryCallback(TrainerCallback):
 
         if self.patience > 0 and USE_EARLY_STOPPING and self._bad_epochs >= self.patience:
             print(
-                f"[EarlyStop] No improvement in {self.metric_name} "
-                f"for {self._bad_epochs} evals (patience={self.patience}). Stopping."
+                f"[EarlyStop] No improvement in {self.metric_name} for "
+                f"{self._bad_epochs} evals (patience={self.patience}). Stopping."
             )
             control.should_training_stop = True
 
@@ -454,7 +411,7 @@ class BestModelInMemoryCallback(TrainerCallback):
 
 
 # -----------------------------------------------------------------------------
-# 4) WeightedTrainer (kept style, just safer log via super().log)
+# WeightedTrainer + epoch table
 # -----------------------------------------------------------------------------
 class WeightedTrainer(Trainer):
     def __init__(self, class_weights: torch.Tensor, *args, **kwargs):
@@ -478,9 +435,7 @@ class WeightedTrainer(Trainer):
             labels = inputs.get("label")
 
         outputs = model(**inputs)
-        logits = outputs.get("logits") if isinstance(outputs, dict) else getattr(outputs, "logits", None)
-        if logits is None:
-            raise ValueError("Model outputs did not contain 'logits'.")
+        logits = outputs.get("logits")
 
         loss_fct = CrossEntropyLoss(weight=self.class_weights.to(logits.device))
         loss = loss_fct(logits.view(-1, self.model.config.num_labels), labels.view(-1))
@@ -544,32 +499,35 @@ class WeightedTrainer(Trainer):
         if self._train_start_time is None:
             self._train_start_time = time.time()
 
-        super().log(logs)
+        if self.state.epoch is not None and "epoch" not in logs:
+            logs["epoch"] = self.state.epoch
+        if self.state.global_step is not None and "step" not in logs:
+            logs["step"] = self.state.global_step
 
-        record = self.state.log_history[-1] if self.state.log_history else {}
-        epoch_val = record.get("epoch")
+        self.state.log_history.append(dict(logs))
+
+        epoch_val = logs.get("epoch")
         if epoch_val is None:
             return
-
         epoch_idx = _epoch_to_int(epoch_val)
         row = self._epoch_cache.setdefault(epoch_idx, {})
 
-        if "loss" in record:
-            row["train_loss"] = float(record["loss"])
-        if "eval_loss" in record:
-            row["val_loss"] = float(record["eval_loss"])
-        if "eval_accuracy" in record:
-            row["accuracy"] = float(record["eval_accuracy"])
-        if "eval_f1_macro" in record:
-            row["f1_macro"] = float(record["eval_f1_macro"])
-        if "eval_f1_micro" in record:
-            row["f1_micro"] = float(record["eval_f1_micro"])
+        if "loss" in logs:
+            row["train_loss"] = float(logs["loss"])
+        if "eval_loss" in logs:
+            row["val_loss"] = float(logs["eval_loss"])
+        if "eval_accuracy" in logs:
+            row["accuracy"] = float(logs["eval_accuracy"])
+        if "eval_f1_macro" in logs:
+            row["f1_macro"] = float(logs["eval_f1_macro"])
+        if "eval_f1_micro" in logs:
+            row["f1_micro"] = float(logs["eval_f1_micro"])
 
         self._maybe_print_epoch_row(epoch_idx)
 
 
 # -----------------------------------------------------------------------------
-# 5) Freezing / partial unfreezing logic + summary (kept)
+# Freezing / partial unfreezing logic + summary
 # -----------------------------------------------------------------------------
 def _get_base_model(model: torch.nn.Module) -> torch.nn.Module:
     if hasattr(model, "base_model") and getattr(model, "base_model") is not None:
@@ -591,7 +549,6 @@ def apply_partial_unfreezing(model: torch.nn.Module, unfreeze_ratio: float) -> L
 
     base = _get_base_model(model)
 
-    # 1) Freeze embeddings
     if hasattr(base, "embeddings"):
         for param in base.embeddings.parameters():
             param.requires_grad = False
@@ -599,7 +556,6 @@ def apply_partial_unfreezing(model: torch.nn.Module, unfreeze_ratio: float) -> L
     else:
         lines.append("⚠️ Could not apply embedding freezing. No 'embeddings' on base model.")
 
-    # 2) Freeze encoder layers based on unfreeze_ratio
     encoder_layers = None
     if hasattr(base, "encoder") and hasattr(base.encoder, "layer"):
         encoder_layers = list(base.encoder.layer)
@@ -627,7 +583,6 @@ def apply_partial_unfreezing(model: torch.nn.Module, unfreeze_ratio: float) -> L
             else:
                 lines.append(f"*_Unfreezing from layer {unfreeze_start} to {total_layers - 1}")
 
-    # 3) Trainable summary
     total = sum(p.numel() for p in model.parameters())
     trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
     ratio = 100.0 * trainable / total if total > 0 else 0.0
@@ -640,10 +595,13 @@ def apply_partial_unfreezing(model: torch.nn.Module, unfreeze_ratio: float) -> L
     for name, param in model.named_parameters():
         if not param.requires_grad:
             continue
-        if ".encoder.layer." in name and "layer" in name.split("."):
+        if ".encoder.layer." in name:
             parts = name.split(".")
-            idx = parts.index("layer")
-            top_group = ".".join(parts[:idx + 2])
+            if "layer" in parts:
+                idx = parts.index("layer")
+                top_group = ".".join(parts[:idx + 2])
+            else:
+                top_group = ".".join(name.split(".")[:2])
         else:
             top_group = ".".join(name.split(".")[:2])
         grouped[top_group].append(name)
@@ -655,7 +613,7 @@ def apply_partial_unfreezing(model: torch.nn.Module, unfreeze_ratio: float) -> L
 
 
 # -----------------------------------------------------------------------------
-# 6) Progress saving + plots (kept)
+# Progress saving + plots
 # -----------------------------------------------------------------------------
 def _save_training_progress(
     trainer: Trainer,
@@ -722,14 +680,14 @@ def _remove_checkpoint_dirs(path: str) -> None:
             shutil.rmtree(full_path, ignore_errors=True)
 
 
-def _plot_loss_curves(trainer: Trainer, run_name: str) -> None:
-    PLOTS_DIR.mkdir(parents=True, exist_ok=True)
+def _plot_loss_curves(trainer: Trainer, run_name: str, plots_dir: Path) -> None:
+    plots_dir.mkdir(parents=True, exist_ok=True)
     history = getattr(trainer.state, "log_history", None) or []
     if not history:
         return
 
-    train_epochs, train_losses = [], []
-    eval_epochs, eval_losses = [], []
+    train_by_epoch: Dict[int, float] = {}
+    eval_by_epoch: Dict[int, float] = {}
 
     for record in history:
         epoch = record.get("epoch")
@@ -738,14 +696,17 @@ def _plot_loss_curves(trainer: Trainer, run_name: str) -> None:
         epoch_idx = _epoch_to_int(epoch)
 
         if "loss" in record:
-            train_epochs.append(epoch_idx)
-            train_losses.append(record["loss"])
+            train_by_epoch[epoch_idx] = float(record["loss"])
         if "eval_loss" in record:
-            eval_epochs.append(epoch_idx)
-            eval_losses.append(record["eval_loss"])
+            eval_by_epoch[epoch_idx] = float(record["eval_loss"])
 
-    if not train_epochs and not eval_epochs:
+    if not train_by_epoch and not eval_by_epoch:
         return
+
+    train_epochs = sorted(train_by_epoch.keys())
+    eval_epochs = sorted(eval_by_epoch.keys())
+    train_losses = [train_by_epoch[e] for e in train_epochs]
+    eval_losses = [eval_by_epoch[e] for e in eval_epochs]
 
     run_name_safe = _fs_safe_model_name(run_name)
 
@@ -760,75 +721,72 @@ def _plot_loss_curves(trainer: Trainer, run_name: str) -> None:
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    loss_path = PLOTS_DIR / f"{run_name_safe}_loss.png"
+    loss_path = plots_dir / f"{run_name_safe}_loss.png"
     plt.savefig(loss_path)
     plt.close()
     print(f"[Info] Saved loss curves to {loss_path}")
 
 
+def _save_run_config(final_model_dir: str, config: Dict[str, Any], slug: str) -> None:
+    os.makedirs(final_model_dir, exist_ok=True)
+    out = dict(config)
+    out["slug"] = slug
+    out_path = os.path.join(final_model_dir, "run_config.json")
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(out, f, indent=2)
+    print(f"[Info] Saved run_config.json to {out_path}")
+
+
 # -----------------------------------------------------------------------------
-# 7) Input building for ablations
+# Tags + global attention mask
 # -----------------------------------------------------------------------------
-def _build_input_text_row(row: pd.Series, input_order: str) -> str:
-    q = "" if pd.isna(row.get(Q_KEY)) else str(row.get(Q_KEY))
-    a = "" if pd.isna(row.get(A_KEY)) else str(row.get(A_KEY))
-    ctx = "" if pd.isna(row.get(CTX_KEY)) else str(row.get(CTX_KEY))
+SPECIAL_TOKENS = ["[Q]", "[CTX]", "[A]"]
+
+
+def _compose_text(q: str, ctx: str, a: str, input_order: str) -> str:
+    q = "" if q is None else str(q)
+    ctx = "" if ctx is None else str(ctx)
+    a = "" if a is None else str(a)
 
     if input_order == "context+question+answer":
-        return f"[CTX] {ctx} [Q] {q} [A] {a}"
+        return f"[CTX] {ctx}\n\n[Q] {q}\n\n[A] {a}"
     if input_order == "question+context+answer":
-        return f"[Q] {q} [CTX] {ctx} [A] {a}"
-    if input_order == "question+context+answer+question_repeat":
-        return f"[Q] {q} [CTX] {ctx} [A] {a} [Q] {q}"
-
-    raise ValueError(f"Unknown input_order: {input_order}")
+        return f"[Q] {q}\n\n[CTX] {ctx}\n\n[A] {a}"
+    return f"[Q] {q}\n\n[CTX] {ctx}\n\n[A] {a}\n\n[Q] {q}"
 
 
-def _add_input_text_column(df: pd.DataFrame, input_order: str) -> None:
-    df["input_text"] = df.apply(lambda r: _build_input_text_row(r, input_order), axis=1)
-
-
-# -----------------------------------------------------------------------------
-# 8) Global attention mask builder (tag-based)
-# -----------------------------------------------------------------------------
 def build_global_attention_mask_from_tags(
     input_ids: List[List[int]],
     *,
     mode: str,
-    tokenizer: AutoTokenizer,
+    q_token_id: int,
+    ctx_token_id: int,
+    a_token_id: int,
 ) -> List[List[int]]:
-    mode = _normalize_global_attention(mode)
-
-    q_id = tokenizer.convert_tokens_to_ids("[Q]")
-    ctx_id = tokenizer.convert_tokens_to_ids("[CTX]")
-    a_id = tokenizer.convert_tokens_to_ids("[A]")
-    tag_ids = {q_id, ctx_id, a_id}
-
     masks: List[List[int]] = []
+    tag_set = {q_token_id, ctx_token_id, a_token_id}
+
     for ids in input_ids:
         m = [0] * len(ids)
-        if not ids:
+        if not m:
             masks.append(m)
             continue
 
-        # always global on CLS / <s>
-        m[0] = 1
+        m[0] = 1  # CLS always global
 
-        if mode == "cls_only":
-            masks.append(m)
-            continue
-
-        # cls_plus_question: tokens after each [Q] until next tag token
-        q_positions = [i for i, t in enumerate(ids) if t == q_id]
-        for qpos in q_positions:
-            start = qpos + 1
-            end = len(ids)
-            for j in range(start, len(ids)):
-                if ids[j] in tag_ids:
-                    end = j
-                    break
-            for j in range(start, end):
-                m[j] = 1
+        if mode == "cls_plus_question":
+            i = 0
+            n = len(ids)
+            while i < n:
+                if ids[i] == q_token_id:
+                    m[i] = 1
+                    j = i + 1
+                    while j < n and ids[j] not in tag_set:
+                        m[j] = 1
+                        j += 1
+                    i = j
+                else:
+                    i += 1
 
         masks.append(m)
 
@@ -847,105 +805,61 @@ def _apply_dropout_to_config(cfg: AutoConfig, dropout: float) -> AutoConfig:
     return cfg
 
 
-def _assert_length_multiple_of_attention_window(max_length: int, attention_window: int = 512) -> None:
-    if max_length % attention_window != 0:
-        print(
-            f"⚠️ [Warn] max_length={max_length} is not a multiple of attention_window={attention_window}. "
-            "Longformer can still run, but you may see padding/multiple warnings or inefficiencies. "
-            "Consider using 1024/2048/3072/4096."
-        )
-
-
 # -----------------------------------------------------------------------------
-# 9) Multilayer head (use YOUR MLPHead + adapter)
+# Core training function (single run)
 # -----------------------------------------------------------------------------
-class MLPHead(nn.Module):
-    # CLS token → Dropout → Linear → GELU → Dropout → Linear → num_labels logits
-    def __init__(self, hidden_size: int, num_labels: int = 3):
-        super().__init__()
-        self.dropout1 = nn.Dropout(0.1)
-        self.fc1 = nn.Linear(hidden_size, hidden_size)
-        self.act = nn.GELU()
-        self.dropout2 = nn.Dropout(0.1)
-        self.fc2 = nn.Linear(hidden_size, num_labels)
-
-    def forward(self, cls_embedding: torch.Tensor) -> torch.Tensor:
-        x = self.dropout1(cls_embedding)
-        x = self.fc1(x)
-        x = self.act(x)
-        x = self.dropout2(x)
-        logits = self.fc2(x)
-        return logits
-
-
-class LongformerClassifierAdapter(nn.Module):
-    """
-    LongformerForSequenceClassification calls:
-        logits = self.classifier(sequence_output)
-    where sequence_output is (batch, seq_len, hidden).
-
-    This adapter extracts CLS embedding and feeds it into MLPHead.
-    """
-    def __init__(self, mlp: MLPHead):
-        super().__init__()
-        self.mlp = mlp
-
-    def forward(self, features: torch.Tensor, **kwargs) -> torch.Tensor:
-        cls_embedding = features[:, 0, :]
-        return self.mlp(cls_embedding)
-
-
-def _apply_multilayer_head(model: nn.Module) -> None:
-    cfg = getattr(model, "config", None)
-    if cfg is None:
-        raise ValueError("Model has no .config; cannot attach multilayer head.")
-
-    hidden_size = int(getattr(cfg, "hidden_size", 0) or 0)
-    num_labels = int(getattr(cfg, "num_labels", 0) or 0)
-
-    if hidden_size <= 0:
-        raise ValueError("Could not determine hidden_size from config.")
-    if num_labels <= 0:
-        raise ValueError("Could not determine num_labels from config.")
-    if not hasattr(model, "classifier"):
-        raise ValueError("Model has no `.classifier` attribute; unexpected architecture.")
-
-    mlp = MLPHead(hidden_size=hidden_size, num_labels=num_labels)
-    model.classifier = LongformerClassifierAdapter(mlp)
-
-
-# -----------------------------------------------------------------------------
-# 10) Core training function
-# -----------------------------------------------------------------------------
-def train_model(
+def train_one(
+    *,
     model_name: str,
     train_df: pd.DataFrame,
     dev_df: pd.DataFrame,
-    text_key: str,
     label_col: str,
-    *,
     output_dir: str,
     final_model_dir: str,
-    batch_size: int,
-    grad_accum: int,
-    learning_rate: float,
-    num_epochs: int,
-    weight_decay: float,
-    unfreeze_ratio: float,
+    plots_dir: Path,
     truncation: str,
-    max_length: int,
-    global_attention: str,
-    dropout: float,
-    classification_head: str,
-    attention_window: int,
-) -> Tuple[Trainer, Dict[int, str], Dict[str, int], Any, Dict[str, Any]]:
+    cfg_fixed: Dict[str, Any],
+    save_model: bool = True,
+    return_model: bool = False,
+) -> Dict[str, Any]:
+    max_length = int(cfg_fixed["max_sequence_length"])
+    attention_window = int(cfg_fixed["attention_window"])
+    learning_rate = float(cfg_fixed["learning_rate"])
+    weight_decay = float(cfg_fixed["weight_decay"])
+    warmup_ratio = float(cfg_fixed["warmup_ratio"])
+    dropout = float(cfg_fixed["dropout"])
+    batch_size = int(cfg_fixed["per_device_batch_size"])
+    grad_accum = int(cfg_fixed["gradient_accumulation_steps"])
+    num_epochs = int(cfg_fixed["num_train_epochs"])
+    unfreeze_ratio = float(cfg_fixed["unfreeze_ratio"])
+    classification_head = str(cfg_fixed["classification_head"])
+    input_order = str(cfg_fixed["input_order"])
+    global_attention = str(cfg_fixed["global_attention"])
+    scheduler_type = str(cfg_fixed["lr_scheduler_type"])
 
+    if attention_window % 2 != 0:
+        raise ValueError(f"attention_window must be even, got {attention_window}")
+
+    eff = _effective_len(max_length, attention_window)
+    if eff != max_length:
+        print(f"⚠️ [Note] max_length={max_length} will pad internally to {eff} for attention_window={attention_window}.")
+    else:
+        print(f"[Info] max_length={max_length} is divisible by attention_window={attention_window} (no internal pad).")
+
+    # Labels
     unique_labels = sorted(train_df[label_col].dropna().unique())
     label2id: Dict[str, int] = {lab: i for i, lab in enumerate(unique_labels)}
     id2label: Dict[int, str] = {i: lab for lab, i in label2id.items()}
 
-    train_df = train_df.dropna(subset=[text_key, label_col]).copy()
-    dev_df = dev_df.dropna(subset=[text_key, label_col]).copy()
+    # Clean
+    for c in (Q_COL, CTX_COL, A_COL, label_col):
+        if c not in train_df.columns:
+            raise KeyError(f"Missing column in train_df: {c}")
+        if c not in dev_df.columns:
+            raise KeyError(f"Missing column in dev_df: {c}")
+
+    train_df = train_df.dropna(subset=[Q_COL, CTX_COL, A_COL, label_col]).copy()
+    dev_df = dev_df.dropna(subset=[Q_COL, CTX_COL, A_COL, label_col]).copy()
     train_df["label"] = train_df[label_col].map(label2id)
     dev_df["label"] = dev_df[label_col].map(label2id)
 
@@ -953,21 +867,26 @@ def train_model(
     class_weights = (len(train_df) / (len(label_counts) * label_counts)).sort_index()
     class_weights_tensor = torch.tensor(class_weights.to_numpy(), dtype=torch.float)
 
-    _assert_length_multiple_of_attention_window(max_length, int(attention_window))
-
-    # Tokenizer
+    # Tokenizer (+ tags)
     try:
         tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
     except Exception:
         tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False)
 
-    # Add tags as special tokens so [Q]/[CTX]/[A] are stable token IDs
-    tokenizer.add_special_tokens({"additional_special_tokens": SPECIAL_TOKENS})
+    added = tokenizer.add_special_tokens({"additional_special_tokens": SPECIAL_TOKENS})
+    q_token_id = tokenizer.convert_tokens_to_ids("[Q]")
+    ctx_token_id = tokenizer.convert_tokens_to_ids("[CTX]")
+    a_token_id = tokenizer.convert_tokens_to_ids("[A]")
 
     def tokenize(batch):
+        texts = [
+            _compose_text(q, ctx, a, input_order)
+            for q, ctx, a in zip(batch[Q_COL], batch[CTX_COL], batch[A_COL])
+        ]
+
         if truncation != "head_tail":
             enc = tokenizer(
-                batch[text_key],
+                texts,
                 truncation=True,
                 padding="max_length",
                 max_length=max_length,
@@ -976,19 +895,20 @@ def train_model(
             enc["global_attention_mask"] = build_global_attention_mask_from_tags(
                 enc["input_ids"],
                 mode=global_attention,
-                tokenizer=tokenizer,
+                q_token_id=q_token_id,
+                ctx_token_id=ctx_token_id,
+                a_token_id=a_token_id,
             )
             return enc
 
-        # head_tail: tokenize without truncation then manually take head+tail
+        # head_tail manual truncation
         inputs = tokenizer(
-            batch[text_key],
+            texts,
             truncation=False,
             padding=False,
             return_attention_mask=True,
             return_token_type_ids=False,
         )
-
         input_ids_list = inputs["input_ids"]
         attn_list = inputs["attention_mask"]
 
@@ -997,40 +917,26 @@ def train_model(
 
         new_input_ids = []
         new_attn = []
-
-        for i in range(len(input_ids_list)):
-            ids = input_ids_list[i]
-            mask = attn_list[i]
-
+        for ids, mask in zip(input_ids_list, attn_list):
             if len(ids) <= max_length:
                 new_input_ids.append(ids)
                 new_attn.append(mask)
                 continue
-
             head_ids = ids[:head_len]
             tail_ids = ids[-tail_len:]
             head_mask = mask[:head_len]
             tail_mask = mask[-tail_len:]
-
-            truncated_ids = head_ids + tail_ids
-            truncated_mask = head_mask + tail_mask
-
-            new_input_ids.append(truncated_ids)
-            new_attn.append(truncated_mask)
+            new_input_ids.append(head_ids + tail_ids)
+            new_attn.append(head_mask + tail_mask)
 
         encoded = {"input_ids": new_input_ids, "attention_mask": new_attn}
-
-        padded = tokenizer.pad(
-            encoded,
-            padding="max_length",
-            max_length=max_length,
-            return_tensors=None,
-        )
-
+        padded = tokenizer.pad(encoded, padding="max_length", max_length=max_length, return_tensors=None)
         padded["global_attention_mask"] = build_global_attention_mask_from_tags(
             padded["input_ids"],
             mode=global_attention,
-            tokenizer=tokenizer,
+            q_token_id=q_token_id,
+            ctx_token_id=ctx_token_id,
+            a_token_id=a_token_id,
         )
         return padded
 
@@ -1050,37 +956,40 @@ def train_model(
     if dev_remove:
         dev_ds = dev_ds.remove_columns(dev_remove)
 
-    # Model (HF default) + dropout + attention_window
+    # Config
     cfg = AutoConfig.from_pretrained(model_name)
     cfg.num_labels = len(unique_labels)
     cfg.id2label = dict(id2label)
     cfg.label2id = dict(label2id)
     cfg = _apply_dropout_to_config(cfg, dropout=float(dropout))
 
-    if hasattr(cfg, "attention_window"):
+    # Apply attention window
+    if hasattr(cfg, "num_hidden_layers"):
+        layers = int(getattr(cfg, "num_hidden_layers"))
+        cfg.attention_window = [int(attention_window)] * layers
+    else:
         cfg.attention_window = int(attention_window)
 
     model = AutoModelForSequenceClassification.from_pretrained(model_name, config=cfg)
 
-    # Must resize embeddings after adding special tokens
-    model.resize_token_embeddings(len(tokenizer))
+    if added > 0:
+        model.resize_token_embeddings(len(tokenizer))
 
-    # Apply multilayer head if needed
-    head = (classification_head or "default").strip().lower()
-    if head == "multilayer":
-        _apply_multilayer_head(model)
+    # Multilayer head
+    if classification_head == "multilayer":
+        hidden = getattr(cfg, "hidden_size", None)
+        if hidden is None:
+            raise ValueError("Could not find cfg.hidden_size for multilayer head.")
+        model.classifier = SequenceMLPHead(hidden_size=int(hidden), num_labels=int(cfg.num_labels), dropout=float(dropout))
 
-    # Freezing
-    freeze_summary_lines = apply_partial_unfreezing(model, float(unfreeze_ratio))
+    # Freeze/unfreeze
+    freeze_summary_lines = apply_partial_unfreezing(model, unfreeze_ratio)
 
-    total_params = sum(p.numel() for p in model.parameters())
-    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    pct = 100.0 * trainable_params / max(1, total_params)
-    print(f"[Info] Trainable params: {trainable_params:,} / {total_params:,} ({pct:.2f}%)")
-    print(f"[Info] Dropout set to: {dropout}")
-    print(f"[Info] Head type: {head}")
+    supports_gc = hasattr(model, "gradient_checkpointing_enable")
+    if not supports_gc:
+        print("[Warn] Model does not support gradient checkpointing; disabling.")
 
-    # TrainingArguments (kept)
+    # TrainingArguments (handle warmup_ratio fallback)
     training_kwargs = dict(
         output_dir=str(output_dir),
         evaluation_strategy="epoch",
@@ -1089,7 +998,7 @@ def train_model(
         disable_tqdm=True,
         report_to="none",
 
-        load_best_model_at_end=False,
+        load_best_model_at_end=False,  # we restore best ourselves
         metric_for_best_model="eval_f1_macro",
         greater_is_better=True,
 
@@ -1099,6 +1008,7 @@ def train_model(
         per_device_eval_batch_size=int(batch_size),
         gradient_accumulation_steps=max(1, int(grad_accum)),
         weight_decay=float(weight_decay),
+
         seed=SEED,
         data_seed=SEED,
         fp16=torch.cuda.is_available(),
@@ -1107,40 +1017,59 @@ def train_model(
         save_safetensors=False,
         use_safetensors=False,
 
-        gradient_checkpointing=True,
+        gradient_checkpointing=bool(supports_gc),
         gradient_checkpointing_kwargs={"use_reentrant": False},
+
+        lr_scheduler_type=str(scheduler_type),
+        warmup_ratio=float(warmup_ratio),
     )
+    if not supports_gc:
+        training_kwargs.pop("gradient_checkpointing_kwargs", None)
 
     ta_params = inspect.signature(TrainingArguments.__init__).parameters
     if "evaluation_strategy" not in ta_params and "eval_strategy" in ta_params:
         training_kwargs["eval_strategy"] = training_kwargs.pop("evaluation_strategy")
+
+    if "warmup_ratio" not in ta_params and "warmup_steps" in ta_params:
+        steps_per_epoch = math.ceil(len(train_ds) / max(1, batch_size) / max(1, grad_accum))
+        total_steps = steps_per_epoch * max(1, int(num_epochs))
+        warmup_steps = int(round(total_steps * float(warmup_ratio)))
+        training_kwargs.pop("warmup_ratio", None)
+        training_kwargs["warmup_steps"] = max(0, warmup_steps)
+        print(f"[Info] TrainingArguments lacks warmup_ratio; using warmup_steps={warmup_steps} instead.")
 
     filtered_kwargs = {k: v for k, v in training_kwargs.items() if k in ta_params}
     training_args = TrainingArguments(**filtered_kwargs)
 
     best_cb = BestModelInMemoryCallback(
         metric_name="eval_f1_macro",
-        patience=EARLY_STOPPING_PATIENCE,
+        patience=int(cfg_fixed["early_stopping_patience"]),
         greater_is_better=True,
     )
 
-    trainer = WeightedTrainer(
+    trainer_kwargs = dict(
         class_weights=class_weights_tensor,
         model=model,
         args=training_args,
         train_dataset=train_ds,
         eval_dataset=dev_ds,
-        processing_class=tokenizer,
         compute_metrics=compute_metrics,
         callbacks=[best_cb],
     )
+    trainer_sig = inspect.signature(Trainer.__init__).parameters
+    if "processing_class" in trainer_sig:
+        trainer_kwargs["processing_class"] = tokenizer
+    else:
+        trainer_kwargs["tokenizer"] = tokenizer
+
+    trainer = WeightedTrainer(**trainer_kwargs)
     trainer.freeze_summary_lines = freeze_summary_lines
 
-    print("[Info] Starting Longformer training…")
+    print(f"[Info] Training (attention_window={attention_window})…")
     trainer.train()
 
-    run_name = os.path.basename(os.path.normpath(str(output_dir))) or model_name
-    _plot_loss_curves(trainer, run_name=run_name)
+    run_name = os.path.basename(os.path.normpath(str(output_dir))) or "run"
+    _plot_loss_curves(trainer, run_name=run_name, plots_dir=plots_dir)
 
     print("[Info] Evaluating LAST epoch weights…")
     last_eval_metrics = trainer.evaluate(eval_dataset=dev_ds)
@@ -1173,10 +1102,6 @@ def train_model(
     _print_metrics_block("Last epoch evaluation metrics (before best-restore)", last_eval_metrics, step=step_int)
     _print_metrics_block("Best restored evaluation metrics", best_eval_metrics, step=step_int)
 
-    print("\n[Layer freezing / trainable parameter summary]")
-    for line in freeze_summary_lines:
-        print(line)
-
     _save_training_progress(
         trainer,
         str(final_model_dir),
@@ -1185,283 +1110,130 @@ def train_model(
         best_eval_metrics=best_eval_metrics,
     )
 
-    # SAVE BEST weights (because we restored them)
-    os.makedirs(final_model_dir, exist_ok=True)
-    trainer.save_model(str(final_model_dir))
-    tokenizer.save_pretrained(str(final_model_dir))
-    print(f"[Info] Saved BEST fine-tuned model & tokenizer to {final_model_dir}")
+    # Save BEST ONLY (optional)
+    if save_model:
+        os.makedirs(final_model_dir, exist_ok=True)
+        trainer.save_model(str(final_model_dir))
+        tokenizer.save_pretrained(str(final_model_dir))
+        print(f"[Info] Saved BEST model & tokenizer to {final_model_dir}")
 
     _remove_checkpoint_dirs(str(output_dir))
 
-    meta_out = {
+    payload: Dict[str, Any] = {
         "best_info": best_info,
         "last_eval_metrics": last_eval_metrics,
         "best_eval_metrics": best_eval_metrics,
     }
-    return trainer, id2label, label2id, tokenizer, meta_out
+    if return_model:
+        payload["model"] = model
+        payload["tokenizer"] = tokenizer
+        payload["id2label"] = id2label
+    return payload
 
 
 # -----------------------------------------------------------------------------
-# 11) Run helpers
-# -----------------------------------------------------------------------------
-def _run_one(
-    *,
-    args,
-    resolved_model: str,
-    train_full_df: pd.DataFrame,
-    test_full_df: pd.DataFrame,
-    classification_head: str,
-    input_order: str,
-    global_attention: str,
-) -> Dict[str, Any]:
-
-    max_length = int(args.max_length)
-    learning_rate = float(args.learning_rate)
-    dropout = float(args.dropout)
-    attention_window = int(args.attention_window)
-
-    slug = _build_output_slug(
-        resolved_model,
-        args.param_mode,
-        unfreeze_ratio=float(args.unfreeze_ratio),
-        truncation=args.truncation,
-        dataset=args.dataset,
-        classification_head=classification_head,
-        input_order=input_order,
-        global_attention=global_attention,
-        max_length=max_length,
-        attention_window=attention_window,
-        learning_rate=learning_rate,
-        dropout=dropout,
-    )
-
-    # SAVE EVERYTHING UNDER THIS FOLDER (stage3 requested)
-    STAGE_DIR = Path(__file__).resolve().parent  # longformer_experiments/ablations
-    output_dir = STAGE_DIR / "tmp_checkpoints" / slug
-    final_model_dir = STAGE_DIR / "stage3_trained_models" / slug
-
-    print(
-        f"\n[Run] Longformer ablation "
-        f"(head={classification_head}, input_order={input_order}, gattn={_normalize_global_attention(global_attention)}, "
-        f"truncation={args.truncation}, unfreeze_ratio={float(args.unfreeze_ratio):.2f}, "
-        f"dataset={args.dataset}, max_length={max_length}, attention_window={attention_window}, "
-        f"batch_size={args.batch_size}, grad_accum={args.grad_accum}, lr={learning_rate}, dropout={dropout}), "
-        f"mode={args.param_mode}"
-    )
-
-    # Build tagged input_text per ablation
-    train_df = train_full_df.copy()
-    dev_df = test_full_df.copy()
-    _add_input_text_column(train_df, input_order)
-    _add_input_text_column(dev_df, input_order)
-
-    train_df = train_df.dropna(subset=["input_text", TARGET_COLUMN]).copy()
-    dev_df = dev_df.dropna(subset=["input_text", TARGET_COLUMN]).copy()
-
-    _, _, _, _, meta = train_model(
-        model_name=resolved_model,
-        train_df=train_df,
-        dev_df=dev_df,
-        text_key="input_text",
-        label_col=TARGET_COLUMN,
-        output_dir=str(output_dir),
-        final_model_dir=str(final_model_dir),
-        batch_size=int(args.batch_size),
-        grad_accum=int(args.grad_accum),
-        learning_rate=float(learning_rate),
-        num_epochs=int(args.num_epochs),
-        weight_decay=float(args.weight_decay),
-        unfreeze_ratio=float(args.unfreeze_ratio),
-        truncation=args.truncation,
-        max_length=int(max_length),
-        global_attention=global_attention,
-        dropout=float(dropout),
-        classification_head=classification_head,
-        attention_window=int(attention_window),
-    )
-
-    best_eval = meta.get("best_eval_metrics") or {}
-    out = {
-        "slug": slug,
-        "classification_head": classification_head,
-        "input_order": input_order,
-        "global_attention": _normalize_global_attention(global_attention),
-        "learning_rate": float(learning_rate),
-        "max_length": int(max_length),
-        "attention_window": int(attention_window),
-        "dropout": float(dropout),
-        "best_eval_f1_macro": float(best_eval.get("eval_f1_macro", float("nan"))),
-        "best_eval_accuracy": float(best_eval.get("eval_accuracy", float("nan"))),
-        "best_eval_loss": float(best_eval.get("eval_loss", float("nan"))),
-        "final_model_dir": str(final_model_dir),
-    }
-    return out
-
-
-# -----------------------------------------------------------------------------
-# 12) Main
+# Runner (3 windows)
 # -----------------------------------------------------------------------------
 def main():
-    parser = argparse.ArgumentParser(
-        description="Longformer ablation study (fixed config) over head/input_order/global_attention."
-    )
-    parser.add_argument(
-        "--dataset",
-        choices=("original", "augmented"),
-        default="original",
-        help="Which training dataset to use.",
-    )
-    parser.add_argument(
-        "--model_name",
-        default="longformer",
-        help="Ignored (Longformer-only). Keep for drop-in compatibility.",
-    )
-    parser.add_argument(
-        "--param_mode",
-        required=True,
-        choices=("fixed",),
-        help="Parameter mode to use.",
-    )
-    parser.add_argument(
-        "--truncation",
-        default="head",
-        choices=("head", "head_tail"),
-        help="Truncation strategy.",
-    )
-
-    # Ablation params (single run)
-    parser.add_argument(
-        "--classification_head",
-        choices=("default", "multilayer"),
-        default="default",
-        help="Head ablation dimension.",
-    )
-    parser.add_argument(
-        "--input_order",
-        choices=tuple(ABLATION_SPACE["input_order"]),
-        default="question+context+answer",
-        help="Tagged input layout.",
-    )
-    parser.add_argument(
-        "--global_attention",
-        choices=("cls_only", "cls_plus_question", "cls", "cls_question"),
-        default="cls_only",
-        help="Global attention pattern (cls_only vs cls_plus_question).",
-    )
-
-    # Training params (defaults from FIXED_GRID_CONFIG)
-    parser.add_argument("--batch_size", type=int, default=int(DEFAULT_CONFIG["batch_size"]))
-    parser.add_argument("--grad_accum", type=int, default=int(DEFAULT_CONFIG["grad_accum"]))
-    parser.add_argument("--num_epochs", type=int, default=int(DEFAULT_CONFIG["num_train_epochs"]))
-    parser.add_argument("--weight_decay", type=float, default=float(DEFAULT_CONFIG["weight_decay"]))
-    parser.add_argument("--unfreeze_ratio", type=float, default=float(DEFAULT_CONFIG["unfreeze_ratio"]))
-
-    parser.add_argument("--learning_rate", type=float, default=float(DEFAULT_CONFIG["learning_rate"]))
-    parser.add_argument("--max_length", type=int, default=int(DEFAULT_CONFIG["max_length"]))
-    parser.add_argument("--dropout", type=float, default=float(DEFAULT_CONFIG["dropout"]))
-    parser.add_argument("--attention_window", type=int, default=int(DEFAULT_CONFIG["attention_window"]))
-
-    # Runner flags
-    parser.add_argument(
-        "--grid_search",
-        action="store_true",
-        help="Runs the full ablation grid (12 runs). Kept name for compatibility.",
-    )
-    parser.add_argument(
-        "--run_one",
-        action="store_true",
-        help="Runs a single ablation setting (classification_head/input_order/global_attention).",
-    )
-
+    parser = argparse.ArgumentParser(description="Stage4 Longformer fixed runs over attention windows.")
+    parser.add_argument("--dataset", choices=("original", "augmented"), default="original")
+    parser.add_argument("--truncation", choices=("head", "head_tail"), default="head")
     args = parser.parse_args()
 
-    if not args.grid_search and not args.run_one:
-        # Default: run full ablations (what Nawar asked for)
-        args.grid_search = True
+    model_name = str(FIXED_GRID_CONFIG["tokenizer"])
 
-    resolved_model = _resolve_model_name(args.model_name)
-    print(f"[Info] Using model: {resolved_model}")
+    # base folder = THIS FILE LOCATION
+    STAGE_DIR = Path(__file__).resolve().parent
+    TMP_DIR = STAGE_DIR / "tmp_checkpoints"
+    TRAINED_DIR = STAGE_DIR / "stage4_trained_models"
+    PLOTS_DIR = STAGE_DIR / "plots"
+    TMP_DIR.mkdir(parents=True, exist_ok=True)
+    TRAINED_DIR.mkdir(parents=True, exist_ok=True)
+    PLOTS_DIR.mkdir(parents=True, exist_ok=True)
 
     train_path = TRAIN_CSV_PATH if args.dataset == "original" else AUGMENTED_TRAIN_CSV_PATH
     train_full_df = pd.read_csv(train_path)
 
     if not os.path.exists(TEST_CSV_PATH):
         raise FileNotFoundError(f"[Fatal] Test CSV not found at {TEST_CSV_PATH}.")
-    test_full_df = pd.read_csv(TEST_CSV_PATH)
+    dev_full_df = pd.read_csv(TEST_CSV_PATH)
 
-    # Basic sanity dropna for core columns (input_text is built per-run)
-    train_full_df = train_full_df.dropna(subset=[Q_KEY, A_KEY, TARGET_COLUMN]).copy()
-    test_full_df = test_full_df.dropna(subset=[Q_KEY, A_KEY, TARGET_COLUMN]).copy()
+    required_cols = {Q_COL, CTX_COL, A_COL, TARGET_COLUMN}
+    for c in required_cols:
+        if c not in train_full_df.columns:
+            raise KeyError(f"[Fatal] Missing {c} in train CSV")
+        if c not in dev_full_df.columns:
+            raise KeyError(f"[Fatal] Missing {c} in test/dev CSV")
 
-    # -------------------------------------------------------------------------
-    # FULL ABLATION GRID (12 runs)
-    # -------------------------------------------------------------------------
-    if args.grid_search and not args.run_one:
-        combos = list(product(
-            ABLATION_SPACE["classification_head"],
-            ABLATION_SPACE["input_order"],
-            ABLATION_SPACE["global_attention"],
-        ))
-        print(f"\n[Ablations] Running {len(combos)} configurations (2 x 3 x 2).")
+    print("\n[FixedConfig] Base (except attention_window):")
+    for k, v in FIXED_GRID_CONFIG.items():
+        if k == "attention_window":
+            continue
+        print(f"  {k}: {v}")
 
-        results: List[Dict[str, Any]] = []
-        best_row: Optional[Dict[str, Any]] = None
+    results: List[Dict[str, Any]] = []
+    raw_csv = STAGE_DIR / "stage4_attention_window_summary_raw.csv"
+    sorted_csv = STAGE_DIR / "stage4_attention_window_summary.csv"
 
-        for i, (head, order, gattn) in enumerate(combos, start=1):
-            print(f"\n[Ablations] ({i}/{len(combos)}) head={head}, order={order}, gattn={gattn}")
-            row = _run_one(
-                args=args,
-                resolved_model=resolved_model,
-                train_full_df=train_full_df,
-                test_full_df=test_full_df,
-                classification_head=head,
-                input_order=order,
-                global_attention=gattn,
-            )
-            results.append(row)
+    for i, aw in enumerate(ATTENTION_WINDOWS_TO_RUN, start=1):
+        cfg_run = dict(FIXED_GRID_CONFIG)
+        cfg_run["attention_window"] = int(aw)
 
-            if best_row is None or (row["best_eval_f1_macro"] > best_row["best_eval_f1_macro"]):
-                best_row = row
+        slug = _build_output_slug(
+            model_name=model_name,
+            truncation=args.truncation,
+            dataset=args.dataset,
+            max_length=int(cfg_run["max_sequence_length"]),
+            attention_window=int(cfg_run["attention_window"]),
+            learning_rate=float(cfg_run["learning_rate"]),
+            weight_decay=float(cfg_run["weight_decay"]),
+            warmup_ratio=float(cfg_run["warmup_ratio"]),
+            dropout=float(cfg_run["dropout"]),
+            classification_head=str(cfg_run["classification_head"]),
+            input_order=str(cfg_run["input_order"]),
+            global_attention=str(cfg_run["global_attention"]),
+        )
 
-        out_df = pd.DataFrame(results).sort_values(by="best_eval_f1_macro", ascending=False)
-        SUMMARY_CSV_PATH.parent.mkdir(parents=True, exist_ok=True)
-        out_df.to_csv(SUMMARY_CSV_PATH, index=False)
+        print(f"\n[Run {i}/{len(ATTENTION_WINDOWS_TO_RUN)}] attention_window={aw}")
+        print(f"[Run] slug={slug}")
 
-        print(f"\n[Ablations] Saved summary CSV -> {SUMMARY_CSV_PATH}")
-        if best_row:
-            print("\n[Ablations] BEST CONFIG:")
-            print(f"  best_eval_f1_macro: {best_row['best_eval_f1_macro']:.6f}")
-            print(f"  classification_head: {best_row['classification_head']}")
-            print(f"  input_order: {best_row['input_order']}")
-            print(f"  global_attention: {best_row['global_attention']}")
-            print(f"  max_length: {best_row['max_length']}")
-            print(f"  attention_window: {best_row['attention_window']}")
-            print(f"  lr: {best_row['learning_rate']}")
-            print(f"  dropout: {best_row['dropout']}")
-            print(f"  slug: {best_row['slug']}")
-            print(f"  final_model_dir: {best_row['final_model_dir']}")
-        return
+        output_dir = TMP_DIR / slug
+        final_model_dir = TRAINED_DIR / slug
 
-    # -------------------------------------------------------------------------
-    # SINGLE RUN
-    # -------------------------------------------------------------------------
-    row = _run_one(
-        args=args,
-        resolved_model=resolved_model,
-        train_full_df=train_full_df,
-        test_full_df=test_full_df,
-        classification_head=args.classification_head,
-        input_order=args.input_order,
-        global_attention=args.global_attention,
-    )
+        meta = train_one(
+            model_name=model_name,
+            train_df=train_full_df,
+            dev_df=dev_full_df,
+            label_col=TARGET_COLUMN,
+            output_dir=str(output_dir),
+            final_model_dir=str(final_model_dir),
+            plots_dir=PLOTS_DIR,
+            truncation=args.truncation,
+            cfg_fixed=cfg_run,
+        )
 
-    print("\n[Final] Longformer DEV RESULTS (BEST restored):")
-    print(f"F1-Macro: {row['best_eval_f1_macro']:.4f}")
-    print(f"Accuracy: {row['best_eval_accuracy']:.4f} ({row['best_eval_accuracy'] * 100:.2f}%)")
-    print(f"Eval Loss: {row['best_eval_loss']:.4f}")
-    print(f"Saved to: {row['final_model_dir']}")
-    print("[Info] Training run complete.")
+        _save_run_config(str(final_model_dir), cfg_run, slug)
 
+        best_eval = meta.get("best_eval_metrics") or {}
+        row = {
+            "run_index": i,
+            "attention_window": int(aw),
+            "effective_seq_len": int(_effective_len(int(cfg_run["max_sequence_length"]), int(aw))),
+            "slug": slug,
+            "best_eval_f1_macro": float(best_eval.get("eval_f1_macro", float("nan"))),
+            "best_eval_accuracy": float(best_eval.get("eval_accuracy", float("nan"))),
+            "best_eval_loss": float(best_eval.get("eval_loss", float("nan"))),
+            "final_model_dir": str(final_model_dir),
+        }
+        results.append(row)
+
+        pd.DataFrame(results).to_csv(raw_csv, index=False)
+
+    out_df = pd.DataFrame(results).sort_values(by="best_eval_f1_macro", ascending=False)
+    out_df.to_csv(sorted_csv, index=False)
+    print(f"\n[Done] Saved summary -> {sorted_csv}")
+    print(f"[Done] Saved raw -> {raw_csv}")
+    print(f"[Saved] Models in: {TRAINED_DIR}")
 
 if __name__ == "__main__":
     main()
