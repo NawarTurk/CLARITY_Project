@@ -1,0 +1,18 @@
+Model: longformer-base
+Head Type: defaultHead
+F1 Macro: 0.580
+F1 Micro: 0.718
+F1 Weighted: 0.686
+Accuracy: 0.718
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.742     0.908     0.817       206
+Clear Non-Reply      0.545     0.522     0.533        23
+    Clear Reply      0.647     0.278     0.389        79
+
+       accuracy                          0.718       308
+      macro avg      0.645     0.569     0.580       308
+   weighted avg      0.703     0.718     0.686       308
+

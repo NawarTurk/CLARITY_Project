@@ -50,35 +50,12 @@ def save_global_report(global_report, filename="prompt_global_f1_summary.csv"):
     print(f"\n✅ Global summary saved to {global_path}")
 
 
-def _parse_encoder_experiment(experiment_name: str, stage_name: str | None):
+def _parse_encoder_experiment(experiment_name: str):
     parts = experiment_name.split("_")
 
-    if stage_name == "stage3":
-        if len(parts) < 8:
-            return None
-        task_id, arch, lang, size, tune, param_mode, head_type, truncation = parts[:8]
-        tail = parts[8:]
-
-        data_variant = stage_name
-        loss_type = ""
-        if tail:
-            if tail[-1] == "NoAug":
-                data_variant = "NoAug"
-                loss_tokens = tail[:-1]
-            else:
-                loss_tokens = tail
-            if loss_tokens:
-                if len(loss_tokens) == 1:
-                    loss_type = loss_tokens[0]
-                elif len(loss_tokens) == 2 and loss_tokens[1].startswith("Dropout"):
-                    loss_type = f"{loss_tokens[0]}-{loss_tokens[1]}"
-                else:
-                    loss_type = "-".join(loss_tokens)
-
-        return task_id, arch, lang, size, tune, param_mode, head_type, truncation, data_variant, loss_type
-
-    # Stage 1 / Stage 2 / legacy encoder naming
-    if len(parts) >= 10:
+    # Unified 11-token format:
+    # task_id_arch_lang_size_tune_param_mode_head_type_truncation_loss_type_data_variant_input_mode
+    if len(parts) >= 11:
         (
             task_id,
             arch,
@@ -87,20 +64,15 @@ def _parse_encoder_experiment(experiment_name: str, stage_name: str | None):
             tune,
             param_mode,
             head_type,
-            data_variant,
-            truncation,
-            loss_type,
-        ) = parts[:10]
-        return task_id, arch, lang, size, tune, param_mode, head_type, truncation, data_variant, loss_type
-
-    # Shorter Stage 2 slug fallback: task_arch_lang_size_tune_param_head_trunc
-    if len(parts) >= 8:
-        task_id, arch, lang, size, tune, param_mode, head_type, truncation = parts[:8]
-        data_variant = stage_name or "stage2"
-        loss_type = ""
-        return task_id, arch, lang, size, tune, param_mode, head_type, truncation, data_variant, loss_type
+            truncation,     # head / head-tail
+            loss_type,      # WCE / FOCAL-Dropout10 / ...
+            data_variant,   # originalData / augmentedData
+            input_mode,     # atomic / enriched
+        ) = parts[:11]
+        return task_id, arch, lang, size, tune, param_mode, head_type, truncation, data_variant, loss_type, input_mode
 
     return None
+
 
 
 def process_encoder_predictions():
@@ -109,23 +81,11 @@ def process_encoder_predictions():
     files = []
 
     encoder_root = Path(__file__).resolve().parents[1] / "results" / "predictions" / "encoder"
-
-    # Stage-aware directories: results/predictions/encoder/stageX
     if encoder_root.exists():
-        for stage_dir in sorted(encoder_root.iterdir()):
-            if stage_dir.is_dir() and stage_dir.name.startswith("stage"):
-                stage_name = stage_dir.name
-                for f in sorted(stage_dir.glob("*_predictions.csv")):
-                    files.append((f, stage_name))
+        for f in sorted(encoder_root.rglob("*_predictions.csv")):
+            stage_name = f.parent.name
+            files.append((f, stage_name))
 
-    # Legacy locations (no explicit stage subfolder)
-    for pred_dir in (
-        ENCODER_PREDICTION_DIR,
-        STAGE2_ENCODER_PREDICTION_DIR,
-    ):
-        if pred_dir.exists():
-            for f in sorted(pred_dir.glob("*_predictions.csv")):
-                files.append((f, None))
 
     ENCODER_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     GLOBAL_REPORT_DIR.mkdir(parents=True, exist_ok=True)
@@ -148,9 +108,10 @@ def process_encoder_predictions():
         if experiment_name.endswith(suffix):
             experiment_name = experiment_name[: -len(suffix)]
 
-        parsed = _parse_encoder_experiment(experiment_name, stage_name)
+        # parsed = _parse_encoder_experiment(experiment_name, stage_name)
+        parsed = _parse_encoder_experiment(experiment_name)
         if parsed is None:
-            print(f"[Warn] Skipping {f.name}: unexpected filename format.")
+            print(f"[Warn] Skipping {f.name} | stage={stage_name}: unexpected filename format.")
             continue
         (
             task_id,
@@ -163,6 +124,7 @@ def process_encoder_predictions():
             truncation,
             data_variant,
             loss_type,
+            input_mode
         ) = parsed
 
         model_name = f"{arch}-{size}"
@@ -187,9 +149,7 @@ def process_encoder_predictions():
             f"Classification Report:\n{report}\n"
         )
 
-        # If we know the stage (stage1, stage2, ...), write into the matching
-        # subfolder under results/eval_logs/detailed/encoder; otherwise keep
-        # the legacy behavior of writing to the root encoder folder.
+   
         if stage_name:
             out_dir = ENCODER_OUTPUT_DIR / stage_name
         else:
@@ -202,6 +162,7 @@ def process_encoder_predictions():
         count += 1
 
         encoder_global_report.append({
+           "stage": stage_name,
             "experiment": experiment_name,
             "task_id": task_id,
             "model_name": model_name,
@@ -213,6 +174,7 @@ def process_encoder_predictions():
             "truncation": truncation,
             "data_variant": data_variant,
             "loss_type": loss_type,
+            "input_mode": input_mode,
             "f1_macro": f1_macro,
             "f1_micro": f1_micro,
             "f1_weighted": f1_weighted,
