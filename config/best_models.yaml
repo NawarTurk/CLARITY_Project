@@ -20,7 +20,7 @@ stage1:
   - name: t1_xlmr_multi_large_unfreezing25_fixed_defaultHead_head_WCE_originalData_atomic
     checkpoint: models/encoders/s1_encoder_adaptation/stage1_trained_models/t1_xlmr_multi_large_unfreezing25_fixed_defaultHead_head_WCE_originalData_atomic
 
-# Stage 2 uses the best available models up to stage 3 (not necessarily trained in stage 3).
+# Best out of Stage 2 uses the best available models up to stage 2 (not necessarily trained in stage 2).
 stage2:
   - name: t1_bert_en_base_lora16_fixed_defaultHead_head-tail_WCE_originalData_atomic
     checkpoint: models/encoders/s2_representation_classification/stage2_trained_models/t1_bert_en_base_lora16_fixed_defaultHead_head-tail_WCE_originalData_atomic
@@ -39,6 +39,7 @@ stage2:
   - name: t1_xlmr_multi_large_unfreezing25_fixed_defaultHead_head-tail_WCE_originalData_atomic
     checkpoint: models/encoders/s2_representation_classification/stage2_trained_models/t1_xlmr_multi_large_unfreezing25_fixed_defaultHead_head-tail_WCE_originalData_atomic
 
+# Best out of Stage 3 uses the best available models up to stage 3 (not necessarily trained in stage 3).
 stage3:
   - name: t1_bert_en_base_lora16_fixed_defaultHead_head-tail_WCE_originalData_atomic
     checkpoint: models/encoders/s2_representation_classification/stage2_trained_models/t1_bert_en_base_lora16_fixed_defaultHead_head-tail_WCE_originalData_atomic
@@ -57,6 +58,7 @@ stage3:
   - name: t1_xlmr_multi_large_unfreezing25_fixed_defaultHead_head-tail_WCE_originalData_atomic
     checkpoint: models/encoders/s2_representation_classification/stage2_trained_models/t1_xlmr_multi_large_unfreezing25_fixed_defaultHead_head-tail_WCE_originalData_atomic
 
+# Best out of Stage 4 uses the best available models up to stage 4 (not necessarily trained in stage 4).
 stage4:
   - name: t1_bert_en_base_lora16_fixed_defaultHead_head-tail_WCE_originalData_atomic
     checkpoint: models/encoders/s2_representation_classification/stage2_trained_models/t1_bert_en_base_lora16_fixed_defaultHead_head-tail_WCE_originalData_atomic

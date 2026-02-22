@@ -16,8 +16,8 @@ runs:
   - model: microsoft/deberta-v3-base
     script: stage3_train_freeze.py
     unfreeze_ratio: 0.25
-    truncation: head_tail        # head | head_tail
-    classification_head: mlp   # default | mlp | avgpool
+    truncation: head_tail        
+    classification_head: mlp   
 
   - model: microsoft/mdeberta-v3-base
     script: stage3_train_freeze.py
