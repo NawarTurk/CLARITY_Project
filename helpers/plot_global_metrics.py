@@ -20,15 +20,19 @@ def main():
     df = pd.read_csv(csv_path)
 
     # metrics = ["f1_macro", "f1_micro", "f1_weighted", "accuracy"]
-    metrics = ["f1_macro", "f1_weighted"]
+    metrics = ["f1_macro"]
 
     group_columns = ["question_columns", "prompt_technique", "prompt_sub_technique", 
                      "prompt_id", 'llm_model', 'model_family', 'param_count']
 
     for group_col in group_columns:
         # average over models/providers (optional, for readability)
-        grouped = df.groupby(group_col)[metrics].mean().reset_index()
-
+        grouped = (
+            df.groupby(group_col)[metrics]
+            .mean()
+            .reset_index()
+            .sort_values("f1_macro", ascending=False)  # 👈 sort by F1 macro
+        )
         # reshape for plotting
         long_df = grouped.melt(
             id_vars=[group_col], value_vars=metrics,
