@@ -5,34 +5,40 @@ from huggingface_hub import InferenceClient
 from dotenv import load_dotenv
 load_dotenv()
 
-# test_data_path  = os.path.join("..", "..", "datasets", "test_dataset_with_president.csv")
-test_data_path  = os.path.join("..", "..", "datasets", "codebench_evaluation_dataset", "clarity_task_evaluation_dataset_with_president.csv")  # for codebench evl data precdictions
+test_data_path  = os.path.join("..", "..", "datasets", "test_dataset.csv")
+# test_data_path  = os.path.join("..", "..", "datasets", "codebench_evaluation_dataset", "clarity_task_evaluation_dataset_with_president.csv")  # for codebench evl data precdictions
 
-# prediction_path = os.path.join("..", "..", "results", "predictions", "prompt")
-prediction_path = os.path.join("..", "..", "results", "codebench_evaluation_prediction", "prompts") # for codebench evl data precdictions
+prediction_path = os.path.join("..", "..", "results", "predictions", "prompt")
+# prediction_path = os.path.join("..", "..", "results", "codebench_evaluation_prediction", "prompts") # for codebench evl data precdictions
 
 prompts_path    = os.path.join("..", "..", "prompts")
 
 MODEL_REGISTRY = {
     # ---- LLaMA family ----
     # "llama-3.1-nemotron-253b": ("nvidia/Llama-3_1-Nemotron-Ultra-253B-v1", 'nebius'),
-    # # "llama-3.1-405b-Instruct": ("meta-llama/Llama-3.1-405B-Instruct", 'nebius'), no longer working
+    # "llama-3.1-nemotron-253b": ("nvidia/Llama-3_1-Nemotron-Ultra-253B-v1", None),
+    
     # "llama-3.3-70b-Instruct": ("meta-llama/Llama-3.3-70B-Instruct", 'nebius'), 
+    # "llama-3.3-70b-Instruct": ("meta-llama/Llama-3.3-70B-Instruct", None), 
 
     # # # ---- Qwen family ---- 
-    # "qwen3-coder-480b-Instruct": ("Qwen/Qwen3-Coder-480B-A35B-Instruct",  'nebius'), 
+    # "qwen3-235b-instruct": ("Qwen/Qwen3-235B-A22B-Instruct-2507",'together'), # nebius till feb1
+    # "qwen3-235b-instruct": ("Qwen/Qwen3-235B-A22B-Instruct-2507",None), # nebius till feb1
 
-    "qwen3-235b-instruct": ("Qwen/Qwen3-235B-A22B-Instruct-2507",'together'), # nebius till feb1
     # "qwen3-80b-instruct": ("Qwen/Qwen3-Next-80B-A3B-Instruct", 'novita'), 
+
     # "qwen3-32b-instruct": ("Qwen/Qwen3-30B-A3B-Instruct-2507",'nebius'), 
+    "qwen3-32b-instruct": ("Qwen/Qwen3-30B-A3B-Instruct-2507",'novita'), 
+    # "qwen3-32b-instruct": ("Qwen/Qwen3-30B-A3B-Instruct-2507",None), 
+
 
     # # ---- Mixtral ---- 
     # "mixtral-8x22b-Instruct": ("mistralai/Mixtral-8x22B-Instruct-v0.1", 'nscale'),  
-    # # "mixtral-8x7b-Instruct": ("mistralai/Mixtral-8x7B-Instruct-v0.1", 'together'), no longer working
-}
+    # "mixtral-8x22b-Instruct": ("mistralai/Mixtral-8x22B-Instruct-v0.1", None), 
+    }
 
 # ---- configuration ----
-prompt_template = "04_t1_fs_base-27-shot_IQ-label-details-president.txt" 
+prompt_template = "00_t1_zs_base_IQ.txt" 
 question_col =  "question"  
 hf_token = os.environ["HF_TOKEN"]  # token with “Make calls to Inference Providers”
 
@@ -46,6 +52,7 @@ for llm_name, (model_id, provider) in MODEL_REGISTRY.items():
 
     # client
     client   = InferenceClient(model=model_id, token=hf_token, provider=provider)
+    # client   = InferenceClient(model=model_id, token=hf_token)
 
     # load system message from prompts/
     with open(os.path.join(prompts_path, prompt_template), "r", encoding="utf-8") as f:
@@ -69,6 +76,7 @@ for llm_name, (model_id, provider) in MODEL_REGISTRY.items():
             {"role": "system", "content": system_msg},
             {"role": "user", "content": user_msg},
         ]
+
         out = client.chat.completions.create(
             messages=messages, temperature=0, max_tokens=1000
         )
@@ -93,11 +101,11 @@ for llm_name, (model_id, provider) in MODEL_REGISTRY.items():
             president = None
 
         try:
-            pred = classify(target_q, full_q, answer, president=president)
+            pred = classify(target_q, full_q, answer)
             test_df.at[i, pred_col] = pred
         except Exception:
             time.sleep(2)
-            pred = classify(target_q, full_q, answer, president=president)
+            pred = classify(target_q, full_q, answer)
             test_df.at[i, pred_col] = pred
 
         tqdm.write(f"Index:: {row['index']}\nCorrect Label:{row['clarity_label']}\nPrediction: {pred}\n") #_________put it back for eval
@@ -110,3 +118,30 @@ for llm_name, (model_id, provider) in MODEL_REGISTRY.items():
     os.makedirs(prediction_path, exist_ok=True)
     test_df.to_csv(out_path, index=False)
     print(f"Saved predictions → {out_path}")
+
+
+
+
+# MODEL_REGISTRY = {
+#     # ---- LLaMA family ----
+#     # "llama-3.1-nemotron-253b": ("nvidia/Llama-3_1-Nemotron-Ultra-253B-v1", 'nebius'),
+#     # "llama-3.1-nemotron-253b": ("nvidia/Llama-3_1-Nemotron-Ultra-253B-v1", None),
+    
+#     # # "llama-3.1-405b-Instruct": ("meta-llama/Llama-3.1-405B-Instruct", 'nebius'), no longer working
+
+#     # "llama-3.3-70b-Instruct": ("meta-llama/Llama-3.3-70B-Instruct", 'nebius'), 
+#     # "llama-3.3-70b-Instruct": ("meta-llama/Llama-3.3-70B-Instruct", None), 
+
+#     # # # ---- Qwen family ---- 
+#     # "qwen3-235b-instruct": ("Qwen/Qwen3-235B-A22B-Instruct-2507",'together'), # nebius till feb1
+#     # "qwen3-235b-instruct": ("Qwen/Qwen3-235B-A22B-Instruct-2507",None), # nebius till feb1
+
+#     "qwen3-80b-instruct": ("Qwen/Qwen3-Next-80B-A3B-Instruct", 'novita'), 
+#     # "qwen3-32b-instruct": ("Qwen/Qwen3-30B-A3B-Instruct-2507",'nebius'), 
+
+#     # # ---- Mixtral ---- 
+#     # "mixtral-8x22b-Instruct": ("mistralai/Mixtral-8x22B-Instruct-v0.1", 'nscale'),  
+#     # "mixtral-8x22b-Instruct": ("mistralai/Mixtral-8x22B-Instruct-v0.1", None), 
+#     #  
+#     # # "mixtral-8x7b-Instruct": ("mistralai/Mixtral-8x7B-Instruct-v0.1", 'together'), no longer working
+# }

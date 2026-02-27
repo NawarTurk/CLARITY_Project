@@ -1,18 +1,18 @@
 Model: mdeberta-base
 Head Type: defaultHead
-F1 Macro: 0.167
-F1 Micro: 0.208
-F1 Weighted: 0.267
-Accuracy: 0.208
+F1 Macro: 0.046
+F1 Micro: 0.075
+F1 Weighted: 0.010
+Accuracy: 0.075
 
 Classification Report:
                  precision    recall  f1-score   support
 
-     Ambivalent      0.624     0.257     0.364       206
-Clear Non-Reply      0.037     0.348     0.066        23
-    Clear Reply      0.600     0.038     0.071        79
+     Ambivalent      0.000     0.000     0.000       206
+Clear Non-Reply      0.075     1.000     0.139        23
+    Clear Reply      0.000     0.000     0.000        79
 
-       accuracy                          0.208       308
-      macro avg      0.420     0.214     0.167       308
-   weighted avg      0.574     0.208     0.267       308
+       accuracy                          0.075       308
+      macro avg      0.025     0.333     0.046       308
+   weighted avg      0.006     0.075     0.010       308
 
