@@ -6,53 +6,39 @@ from dotenv import load_dotenv
 load_dotenv()
 
 test_data_path  = os.path.join("..", "..", "datasets", "test_dataset.csv")
-# test_data_path  = os.path.join("..", "..", "datasets", "codebench_evaluation_dataset", "clarity_task_evaluation_dataset_with_president.csv")  # for codebench evl data precdictions
 
 prediction_path = os.path.join("..", "..", "results", "predictions", "prompt")
-# prediction_path = os.path.join("..", "..", "results", "codebench_evaluation_prediction", "prompts") # for codebench evl data precdictions
 
 prompts_path    = os.path.join("..", "..", "prompts")
 
 MODEL_REGISTRY = {
     # ---- LLaMA family ----
-    # "llama-3.1-nemotron-253b": ("nvidia/Llama-3_1-Nemotron-Ultra-253B-v1", 'nebius'),
-    # "llama-3.1-nemotron-253b": ("nvidia/Llama-3_1-Nemotron-Ultra-253B-v1", None),
-    
-    # "llama-3.3-70b-Instruct": ("meta-llama/Llama-3.3-70B-Instruct", 'nebius'), 
-    # "llama-3.3-70b-Instruct": ("meta-llama/Llama-3.3-70B-Instruct", None), 
+    "llama-3.1-nemotron-253b": ("nvidia/Llama-3_1-Nemotron-Ultra-253B-v1", 'nebius'),
+    "llama-3.3-70b-Instruct": ("meta-llama/Llama-3.3-70B-Instruct", 'nebius'), 
 
     # # # ---- Qwen family ---- 
-    # "qwen3-235b-instruct": ("Qwen/Qwen3-235B-A22B-Instruct-2507",'together'), # nebius till feb1
-    # "qwen3-235b-instruct": ("Qwen/Qwen3-235B-A22B-Instruct-2507",None), # nebius till feb1
-
-    # "qwen3-80b-instruct": ("Qwen/Qwen3-Next-80B-A3B-Instruct", 'novita'), 
-
-    # "qwen3-32b-instruct": ("Qwen/Qwen3-30B-A3B-Instruct-2507",'nebius'), 
+    "qwen3-235b-instruct": ("Qwen/Qwen3-235B-A22B-Instruct-2507",'together'), # nebius till feb1
+    "qwen3-80b-instruct": ("Qwen/Qwen3-Next-80B-A3B-Instruct", 'novita'), 
     "qwen3-32b-instruct": ("Qwen/Qwen3-30B-A3B-Instruct-2507",'novita'), 
-    # "qwen3-32b-instruct": ("Qwen/Qwen3-30B-A3B-Instruct-2507",None), 
-
 
     # # ---- Mixtral ---- 
-    # "mixtral-8x22b-Instruct": ("mistralai/Mixtral-8x22B-Instruct-v0.1", 'nscale'),  
-    # "mixtral-8x22b-Instruct": ("mistralai/Mixtral-8x22B-Instruct-v0.1", None), 
+    "mixtral-8x22b-Instruct": ("mistralai/Mixtral-8x22B-Instruct-v0.1", 'nscale'),  
     }
 
 # ---- configuration ----
 prompt_template = "00_t1_zs_base_IQ.txt" 
 question_col =  "question"  
-hf_token = os.environ["HF_TOKEN"]  # token with “Make calls to Inference Providers”
+hf_token = os.environ["HF_TOKEN"]  
 
 for llm_name, (model_id, provider) in MODEL_REGISTRY.items():
     prompt_name = os.path.splitext(prompt_template)[0] 
     pred_col = f"{llm_name}_{prompt_name}_{provider}"          # e.g., "qwen-1.8b_01_t1_zs_re2_nebius"
     
-    #  out_path = os.path.join(prediction_path, f"{pred_col}.csv")
-    out_path = os.path.join(prediction_path, f"{pred_col}", f"{pred_col}.csv") # # for codebench evl data precdictions
+    out_path = os.path.join(prediction_path, f"{pred_col}.csv")
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
     # client
     client   = InferenceClient(model=model_id, token=hf_token, provider=provider)
-    # client   = InferenceClient(model=model_id, token=hf_token)
 
     # load system message from prompts/
     with open(os.path.join(prompts_path, prompt_template), "r", encoding="utf-8") as f:
@@ -119,29 +105,3 @@ for llm_name, (model_id, provider) in MODEL_REGISTRY.items():
     test_df.to_csv(out_path, index=False)
     print(f"Saved predictions → {out_path}")
 
-
-
-
-# MODEL_REGISTRY = {
-#     # ---- LLaMA family ----
-#     # "llama-3.1-nemotron-253b": ("nvidia/Llama-3_1-Nemotron-Ultra-253B-v1", 'nebius'),
-#     # "llama-3.1-nemotron-253b": ("nvidia/Llama-3_1-Nemotron-Ultra-253B-v1", None),
-    
-#     # # "llama-3.1-405b-Instruct": ("meta-llama/Llama-3.1-405B-Instruct", 'nebius'), no longer working
-
-#     # "llama-3.3-70b-Instruct": ("meta-llama/Llama-3.3-70B-Instruct", 'nebius'), 
-#     # "llama-3.3-70b-Instruct": ("meta-llama/Llama-3.3-70B-Instruct", None), 
-
-#     # # # ---- Qwen family ---- 
-#     # "qwen3-235b-instruct": ("Qwen/Qwen3-235B-A22B-Instruct-2507",'together'), # nebius till feb1
-#     # "qwen3-235b-instruct": ("Qwen/Qwen3-235B-A22B-Instruct-2507",None), # nebius till feb1
-
-#     "qwen3-80b-instruct": ("Qwen/Qwen3-Next-80B-A3B-Instruct", 'novita'), 
-#     # "qwen3-32b-instruct": ("Qwen/Qwen3-30B-A3B-Instruct-2507",'nebius'), 
-
-#     # # ---- Mixtral ---- 
-#     # "mixtral-8x22b-Instruct": ("mistralai/Mixtral-8x22B-Instruct-v0.1", 'nscale'),  
-#     # "mixtral-8x22b-Instruct": ("mistralai/Mixtral-8x22B-Instruct-v0.1", None), 
-#     #  
-#     # # "mixtral-8x7b-Instruct": ("mistralai/Mixtral-8x7B-Instruct-v0.1", 'together'), no longer working
-# }

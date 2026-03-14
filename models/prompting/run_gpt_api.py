@@ -7,11 +7,9 @@ load_dotenv()
 # ---- configuration ----
 client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
-# test_data_path  = "../../datasets/test_dataset_with_president.csv"
-test_data_path  = os.path.join("..", "..", "datasets", "codebench_evaluation_dataset", "clarity_task_evaluation_dataset.csv")  # for codebench evl data precdictions
+test_data_path  = "../../datasets/test_dataset_with_president.csv"
 
-# prediction_path = "../../results/predictions/prompt"
-prediction_path = os.path.join("..", "..", "results", "codebench_evaluation_prediction", "prompts") # for codebench evl data precdictions
+prediction_path = "../../results/predictions/prompt"
 
 prompts_path    = "../../prompts"
 prompt_template = "04_t1_fs_base-27-shot_IQ-label-details.txt"
@@ -60,9 +58,7 @@ def classify(target_q: str, full_q: str, answer: str) -> str:
             # temperature=0,
             max_completion_tokens=1500,
         )
-        # print("RESPONSE:", completion)
-        # print("CHOICE:", completion.choices[0].message)
-        # print("CONTENT:", completion.choices[0].message.content)
+
         return (completion.choices[0].message.content or "").strip()
     except Exception as e:
         print(f"⚠️ Error: {e}")

@@ -8,16 +8,9 @@ load_dotenv()
 # ---- configuration ----
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
-# test_data_path  = "../../datasets/test_dataset_with_president.csv"
-test_data_path = os.path.join(
-    "..", "..", "datasets", "codebench_evaluation_dataset",
-    "clarity_task_evaluation_dataset_with_president.csv"
-)
+test_data_path  = "../../datasets/test_dataset_with_president.csv"
 
-# prediction_path = "../../results/predictions/prompt"
-prediction_path = os.path.join(
-    "..", "..", "results", "codebench_evaluation_prediction", "prompts"
-)
+prediction_path = "../../results/predictions/prompt"
 
 prompts_path    = "../../prompts"
 prompt_template = "04_t1_fs_base-27-shot_IQ-label-details-president.txt"
