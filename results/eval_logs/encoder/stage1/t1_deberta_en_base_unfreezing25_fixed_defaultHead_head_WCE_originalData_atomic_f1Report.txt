@@ -1,0 +1,18 @@
+Model: deberta-base
+Head Type: defaultHead
+F1 Macro: 0.628
+F1 Micro: 0.679
+F1 Weighted: 0.690
+Accuracy: 0.679
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.836     0.670     0.744       206
+Clear Non-Reply      0.457     0.696     0.552        23
+    Clear Reply      0.509     0.696     0.588        79
+
+       accuracy                          0.679       308
+      macro avg      0.601     0.687     0.628       308
+   weighted avg      0.724     0.679     0.690       308
+

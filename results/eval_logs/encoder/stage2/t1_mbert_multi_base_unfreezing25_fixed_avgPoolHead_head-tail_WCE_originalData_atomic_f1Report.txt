@@ -1,0 +1,18 @@
+Model: mbert-base
+Head Type: avgPoolHead
+F1 Macro: 0.601
+F1 Micro: 0.653
+F1 Weighted: 0.666
+Accuracy: 0.653
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.822     0.650     0.726       206
+Clear Non-Reply      0.400     0.783     0.529        23
+    Clear Reply      0.490     0.620     0.547        79
+
+       accuracy                          0.653       308
+      macro avg      0.571     0.684     0.601       308
+   weighted avg      0.705     0.653     0.666       308
+

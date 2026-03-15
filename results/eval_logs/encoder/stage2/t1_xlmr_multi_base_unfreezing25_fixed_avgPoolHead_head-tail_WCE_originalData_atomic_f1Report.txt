@@ -1,0 +1,18 @@
+Model: xlmr-base
+Head Type: avgPoolHead
+F1 Macro: 0.547
+F1 Micro: 0.649
+F1 Weighted: 0.648
+Accuracy: 0.649
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.752     0.767     0.760       206
+Clear Non-Reply      0.600     0.391     0.474        23
+    Clear Reply      0.398     0.418     0.407        79
+
+       accuracy                          0.649       308
+      macro avg      0.583     0.525     0.547       308
+   weighted avg      0.650     0.649     0.648       308
+

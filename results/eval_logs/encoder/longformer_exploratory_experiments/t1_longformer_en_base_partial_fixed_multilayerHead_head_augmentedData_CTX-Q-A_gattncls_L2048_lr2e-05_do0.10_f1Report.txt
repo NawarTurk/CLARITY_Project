@@ -1,0 +1,18 @@
+Model: longformer-base
+Head Type: multilayerHead
+F1 Macro: 0.171
+F1 Micro: 0.240
+F1 Weighted: 0.209
+Accuracy: 0.240
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.590     0.112     0.188       206
+Clear Non-Reply      0.000     0.000     0.000        23
+    Clear Reply      0.216     0.646     0.324        79
+
+       accuracy                          0.240       308
+      macro avg      0.269     0.252     0.171       308
+   weighted avg      0.450     0.240     0.209       308
+

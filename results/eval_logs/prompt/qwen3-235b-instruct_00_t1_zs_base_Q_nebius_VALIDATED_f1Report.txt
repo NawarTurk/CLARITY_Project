@@ -1,0 +1,17 @@
+File: qwen3-235b-instruct_00_t1_zs_base_Q_nebius_VALIDATED.csv
+F1 Macro: 0.544
+F1 Micro: 0.672
+F1 Weighted: 0.651
+Accuracy: 0.672
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+    Clear Reply      0.704     0.241     0.358        79
+     Ambivalent      0.744     0.820     0.781       206
+Clear Non-Reply      0.352     0.826     0.494        23
+
+       accuracy                          0.672       308
+      macro avg      0.600     0.629     0.544       308
+   weighted avg      0.705     0.672     0.651       308
+

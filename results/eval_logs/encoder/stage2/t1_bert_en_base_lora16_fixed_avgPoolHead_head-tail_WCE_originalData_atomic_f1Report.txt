@@ -1,0 +1,18 @@
+Model: bert-base
+Head Type: avgPoolHead
+F1 Macro: 0.594
+F1 Micro: 0.669
+F1 Weighted: 0.670
+Accuracy: 0.669
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.778     0.748     0.762       206
+Clear Non-Reply      0.447     0.739     0.557        23
+    Clear Reply      0.486     0.443     0.464        79
+
+       accuracy                          0.669       308
+      macro avg      0.570     0.643     0.594       308
+   weighted avg      0.678     0.669     0.670       308
+

@@ -1,0 +1,18 @@
+Model: encoder-ensemble-base+large
+Head Type: encoder-ensemble
+F1 Macro: 0.656
+F1 Micro: 0.721
+F1 Weighted: 0.725
+Accuracy: 0.721
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.818     0.762     0.789       206
+Clear Non-Reply      0.591     0.565     0.578        23
+    Clear Reply      0.553     0.658     0.601        79
+
+       accuracy                          0.721       308
+      macro avg      0.654     0.662     0.656       308
+   weighted avg      0.733     0.721     0.725       308
+

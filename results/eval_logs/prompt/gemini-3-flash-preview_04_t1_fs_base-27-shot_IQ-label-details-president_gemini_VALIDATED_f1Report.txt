@@ -1,0 +1,17 @@
+File: gemini-3-flash-preview_04_t1_fs_base-27-shot_IQ-label-details-president_gemini_VALIDATED.csv
+F1 Macro: 0.719
+F1 Micro: 0.724
+F1 Weighted: 0.733
+Accuracy: 0.724
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+    Clear Reply      0.527     0.861     0.654        79
+     Ambivalent      0.912     0.655     0.763       206
+Clear Non-Reply      0.645     0.870     0.741        23
+
+       accuracy                          0.724       308
+      macro avg      0.695     0.795     0.719       308
+   weighted avg      0.793     0.724     0.733       308
+

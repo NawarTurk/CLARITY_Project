@@ -5,15 +5,15 @@ from sklearn.metrics import accuracy_score, classification_report, f1_score
 PREDICTION_DIR = Path(__file__).resolve().parents[1] / "results" / "predictions" / "prompt"
 TARGET_COLUMN = "clarity_label"
 MODEL_PREDICTION_COLUMN = "model_prediction"
-OUTPUT_DIR = Path(__file__).resolve().parents[1] / "results" / "eval_logs" / "detailed" / "prompt"
+OUTPUT_DIR = Path(__file__).resolve().parents[1] / "results" / "eval_logs" /  "prompt"
 GLOBAL_REPORT_DIR = Path(__file__).resolve().parents[1] / "results" 
 
-ENCODER_PREDICTION_DIR = Path(__file__).resolve().parents[1] / "results" / "predictions" / "detailed" / "encoder"
+ENCODER_PREDICTION_DIR = Path(__file__).resolve().parents[1] / "results" / "predictions" / "encoder"
 ENCODER_STAGE1_PREDICTION_DIR = Path(__file__).resolve().parents[1] / "results" / "predictions" / "encoder" / "stage1"
 ENCODER_STAGE2_PREDICTION_DIR = Path(__file__).resolve().parents[1] / "results" / "predictions" / "encoder" / "stage2"
 ENCODER_STAGE3_PREDICTION_DIR = Path(__file__).resolve().parents[1] / "results" / "predictions" / "encoder" / "stage3"
 STAGE2_ENCODER_PREDICTION_DIR = Path(__file__).resolve().parents[1] / "results" / "predictions" / "stage2_encoder"
-ENCODER_OUTPUT_DIR = Path(__file__).resolve().parents[1] / "results" / "eval_logs" / "detailed" / "encoder"
+ENCODER_OUTPUT_DIR = Path(__file__).resolve().parents[1] / "results" / "eval_logs" / "encoder"
 ENCODER_TARGET_COLUMN = "clarity_label"
 ENCODER_PRED_COLUMN = "predicted_label"
 

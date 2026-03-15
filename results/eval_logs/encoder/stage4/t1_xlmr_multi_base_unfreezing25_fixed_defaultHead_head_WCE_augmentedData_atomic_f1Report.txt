@@ -1,0 +1,18 @@
+Model: xlmr-base
+Head Type: defaultHead
+F1 Macro: 0.626
+F1 Micro: 0.688
+F1 Weighted: 0.684
+Accuracy: 0.688
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.771     0.786     0.779       206
+Clear Non-Reply      0.586     0.739     0.654        23
+    Clear Reply      0.478     0.418     0.446        79
+
+       accuracy                          0.688       308
+      macro avg      0.612     0.648     0.626       308
+   weighted avg      0.682     0.688     0.684       308
+

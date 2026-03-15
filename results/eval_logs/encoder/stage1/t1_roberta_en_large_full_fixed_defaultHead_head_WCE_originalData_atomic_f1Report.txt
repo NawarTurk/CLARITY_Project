@@ -1,0 +1,18 @@
+Model: roberta-large
+Head Type: defaultHead
+F1 Macro: 0.267
+F1 Micro: 0.669
+F1 Weighted: 0.536
+Accuracy: 0.669
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.669     1.000     0.802       206
+Clear Non-Reply      0.000     0.000     0.000        23
+    Clear Reply      0.000     0.000     0.000        79
+
+       accuracy                          0.669       308
+      macro avg      0.223     0.333     0.267       308
+   weighted avg      0.447     0.669     0.536       308
+

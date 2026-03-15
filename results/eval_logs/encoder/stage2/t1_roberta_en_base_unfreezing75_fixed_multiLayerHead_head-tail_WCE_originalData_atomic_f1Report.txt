@@ -1,0 +1,18 @@
+Model: roberta-base
+Head Type: multiLayerHead
+F1 Macro: 0.528
+F1 Micro: 0.604
+F1 Weighted: 0.616
+Accuracy: 0.604
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+     Ambivalent      0.757     0.650     0.700       206
+Clear Non-Reply      0.435     0.435     0.435        23
+    Clear Reply      0.389     0.532     0.449        79
+
+       accuracy                          0.604       308
+      macro avg      0.527     0.539     0.528       308
+   weighted avg      0.639     0.604     0.616       308
+

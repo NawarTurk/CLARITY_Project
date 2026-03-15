@@ -1,0 +1,17 @@
+File: qwen3-80b-instruct_01_t1_zs_re2_Q_novita_VALIDATED.csv
+F1 Macro: 0.482
+F1 Micro: 0.659
+F1 Weighted: 0.618
+Accuracy: 0.659
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+    Clear Reply      0.846     0.139     0.239        79
+     Ambivalent      0.727     0.854     0.786       206
+Clear Non-Reply      0.302     0.696     0.421        23
+
+       accuracy                          0.659       308
+      macro avg      0.625     0.563     0.482       308
+   weighted avg      0.726     0.659     0.618       308
+
