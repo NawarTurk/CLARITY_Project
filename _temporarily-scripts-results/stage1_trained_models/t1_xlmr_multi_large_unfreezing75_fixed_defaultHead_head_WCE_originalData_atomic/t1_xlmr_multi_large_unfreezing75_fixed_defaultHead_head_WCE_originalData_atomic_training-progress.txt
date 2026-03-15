@@ -1,0 +1,54 @@
+Epoch  Progress%         ETA  Training Loss  Validation Loss   Accuracy   F1 Macro   F1 Micro
+---------------------------------------------------------------------------------------------
+    1       5.00      00m58s       1.127800         1.142873   0.074675   0.046324   0.074675
+    2      10.00       2h31m       1.116600         1.117245   0.256494   0.136090   0.256494
+    3      15.00       3h17m       1.112300         1.108331   0.256494   0.136090   0.256494
+    4      20.00       3h27m       1.123100         1.105487   0.256494   0.136090   0.256494
+    5      25.00       3h25m       1.110400         1.089299   0.256494   0.136090   0.256494
+    6      30.00       3h19m       1.107500         1.081087   0.668831   0.267185   0.668831
+    7      35.00       3h09m       1.112100         1.081724   0.668831   0.267185   0.668831
+    8      40.00       3h05m       1.108900         1.065810   0.668831   0.267185   0.668831
+    9      45.00       2h57m       1.107700         1.096694   0.668831   0.267185   0.668831
+   10      50.00       2h47m       1.106300         1.073429   0.668831   0.267185   0.668831
+   11      55.00       2h34m       1.104200         1.089872   0.668831   0.267185   0.668831
+
+[Final evaluation metrics]
+  eval_loss: 1.0899
+  eval_accuracy: 0.6688
+  eval_f1_macro: 0.2672
+  eval_f1_micro: 0.6688
+  eval_f1_weighted: 0.5361
+  eval_runtime: 4.1025
+  eval_samples_per_second: 75.0770
+  eval_steps_per_second: 4.8750
+  epoch: 11.0000
+  step: 2376
+
+[Layer freezing / trainable parameter summary]
+[Freeze] Embedding layer parameters frozen.
+*_Unfreezing ratio: 75% of encoder layers
+*_Total encoder layers: 24
+*_Unfreezing from layer 6 to 23
+*_Total parameters:     559,893,507
+*__Trainable parameters: 227,784,707
+*__Trainable ratio:      40.68%
+✅ classifier.dense: (2 params)
+✅ classifier.out_proj: (2 params)
+✅ roberta.encoder.layer.10: (16 params)
+✅ roberta.encoder.layer.11: (16 params)
+✅ roberta.encoder.layer.12: (16 params)
+✅ roberta.encoder.layer.13: (16 params)
+✅ roberta.encoder.layer.14: (16 params)
+✅ roberta.encoder.layer.15: (16 params)
+✅ roberta.encoder.layer.16: (16 params)
+✅ roberta.encoder.layer.17: (16 params)
+✅ roberta.encoder.layer.18: (16 params)
+✅ roberta.encoder.layer.19: (16 params)
+✅ roberta.encoder.layer.20: (16 params)
+✅ roberta.encoder.layer.21: (16 params)
+✅ roberta.encoder.layer.22: (16 params)
+✅ roberta.encoder.layer.23: (16 params)
+✅ roberta.encoder.layer.6: (16 params)
+✅ roberta.encoder.layer.7: (16 params)
+✅ roberta.encoder.layer.8: (16 params)
+✅ roberta.encoder.layer.9: (16 params)

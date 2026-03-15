@@ -1,0 +1,44 @@
+Epoch  Progress%         ETA  Training Loss  Validation Loss   Accuracy   F1 Macro   F1 Micro
+---------------------------------------------------------------------------------------------
+    1       5.00      01m03s       1.111700         1.029855   0.646104   0.356783   0.646104
+    2      10.00      10m28s       1.007900         1.047808   0.318182   0.327705   0.318182
+    3      15.00      12m51s       0.865100         0.792244   0.633117   0.565512   0.633117
+    4      20.00      13m33s       0.731100         0.814183   0.701299   0.587585   0.701299
+    5      25.00      13m30s       0.643000         0.771834   0.467532   0.488713   0.467532
+    6      30.00      13m05s       0.528300         0.868014   0.594156   0.578692   0.594156
+    7      35.00      12m29s       0.469200         0.851018   0.600649   0.543408   0.600649
+    8      40.00      11m46s       0.375500         0.906174   0.610390   0.600110   0.610390
+    9      45.00      10m57s       0.304400         0.877582   0.665584   0.628262   0.665584
+   10      50.00      10m04s       0.249500         1.066776   0.662338   0.560264   0.662338
+   11      55.00      09m09s       0.213700         1.146832   0.607143   0.597812   0.607143
+   12      60.00      08m12s       0.186900         1.268730   0.613636   0.599669   0.613636
+   13      65.00      07m13s       0.170700         1.322538   0.639610   0.588964   0.639610
+   14      70.00      06m14s       0.132800         1.606965   0.655844   0.627888   0.655844
+
+[Final evaluation metrics]
+  eval_loss: 0.8776
+  eval_accuracy: 0.6656
+  eval_f1_macro: 0.6283
+  eval_f1_micro: 0.6656
+  eval_f1_weighted: 0.6751
+  eval_runtime: 3.2020
+  eval_samples_per_second: 96.1900
+  eval_steps_per_second: 6.2460
+  epoch: 14.0000
+  step: 3024
+
+[Layer freezing / trainable parameter summary]
+[Freeze] Embedding layer parameters frozen.
+*_Total encoder layers: 24
+*_Unfreezing from layer 18 to 23
+*_Total parameters:     355,362,819
+*__Trainable parameters: 76,630,019
+*__Trainable ratio:      21.56%
+✅ base_model.encoder.layer.18: (16 params)
+✅ base_model.encoder.layer.19: (16 params)
+✅ base_model.encoder.layer.20: (16 params)
+✅ base_model.encoder.layer.21: (16 params)
+✅ base_model.encoder.layer.22: (16 params)
+✅ base_model.encoder.layer.23: (16 params)
+✅ base_model.pooler: (2 params)
+✅ classifier.classifier: (2 params)

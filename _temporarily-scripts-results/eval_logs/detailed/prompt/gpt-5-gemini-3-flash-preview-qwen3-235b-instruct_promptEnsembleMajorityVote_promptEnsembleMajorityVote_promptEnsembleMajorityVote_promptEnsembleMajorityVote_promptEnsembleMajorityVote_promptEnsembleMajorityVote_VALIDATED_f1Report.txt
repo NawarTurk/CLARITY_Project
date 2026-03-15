@@ -1,0 +1,17 @@
+File: gpt-5-gemini-3-flash-preview-qwen3-235b-instruct_promptEnsembleMajorityVote_promptEnsembleMajorityVote_promptEnsembleMajorityVote_promptEnsembleMajorityVote_promptEnsembleMajorityVote_promptEnsembleMajorityVote_VALIDATED.csv
+F1 Macro: 0.781
+F1 Micro: 0.808
+F1 Weighted: 0.810
+Accuracy: 0.808
+
+Classification Report:
+                 precision    recall  f1-score   support
+
+    Clear Reply      0.682     0.734     0.707        79
+     Ambivalent      0.877     0.830     0.853       206
+Clear Non-Reply      0.714     0.870     0.784        23
+
+       accuracy                          0.808       308
+      macro avg      0.758     0.811     0.781       308
+   weighted avg      0.815     0.808     0.810       308
+

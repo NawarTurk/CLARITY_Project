@@ -1,0 +1,48 @@
+Epoch  Progress%         ETA  Training Loss  Validation Loss   Accuracy   F1 Macro   F1 Micro
+---------------------------------------------------------------------------------------------
+    1       5.00      00m21s       1.098700         1.078230   0.366883   0.316018   0.366883
+    2      10.00      05m10s       1.050800         1.067835   0.402597   0.342307   0.402597
+    3      15.00      06m24s       1.009200         1.021074   0.451299   0.390199   0.451299
+    4      20.00      06m45s       0.974200         0.949217   0.522727   0.462611   0.522727
+    5      25.00      06m43s       0.927600         0.920777   0.568182   0.490554   0.568182
+    6      30.00      06m32s       0.884700         0.899218   0.584416   0.510773   0.584416
+    7      35.00      06m13s       0.873100         0.895960   0.600649   0.530169   0.600649
+    8      40.00      05m52s       0.852600         0.916897   0.594156   0.546133   0.594156
+    9      45.00      05m27s       0.849600         0.883552   0.587662   0.538432   0.587662
+   10      50.00      05m01s       0.839800         0.922709   0.564935   0.532131   0.564935
+   11      55.00      04m33s       0.830900         0.881230   0.607143   0.562464   0.607143
+   12      60.00      04m05s       0.821000         0.896733   0.571429   0.531239   0.571429
+   13      65.00      03m36s       0.803900         0.886312   0.590909   0.555516   0.590909
+   14      70.00      03m06s       0.799700         0.882229   0.594156   0.554714   0.594156
+   15      75.00      02m36s       0.789800         0.879290   0.587662   0.540746   0.587662
+   16      80.00      02m05s       0.794200         0.862778   0.597403   0.552250   0.597403
+
+[Final evaluation metrics]
+  eval_loss: 0.8812
+  eval_accuracy: 0.6071
+  eval_f1_macro: 0.5625
+  eval_f1_micro: 0.6071
+  eval_f1_weighted: 0.6214
+  eval_runtime: 1.0892
+  eval_samples_per_second: 282.7880
+  eval_steps_per_second: 18.3630
+  epoch: 11.0000
+  step: 2376
+
+[Layer freezing / trainable parameter summary]
+*_Total parameters:     110,076,678
+*__Trainable parameters: 594,438
+*__Trainable ratio:      0.54%
+✅ base_model.model: (4 params)
+✅ base_model.model.bert.encoder.layer.0: (4 params)
+✅ base_model.model.bert.encoder.layer.1: (4 params)
+✅ base_model.model.bert.encoder.layer.10: (4 params)
+✅ base_model.model.bert.encoder.layer.11: (4 params)
+✅ base_model.model.bert.encoder.layer.2: (4 params)
+✅ base_model.model.bert.encoder.layer.3: (4 params)
+✅ base_model.model.bert.encoder.layer.4: (4 params)
+✅ base_model.model.bert.encoder.layer.5: (4 params)
+✅ base_model.model.bert.encoder.layer.6: (4 params)
+✅ base_model.model.bert.encoder.layer.7: (4 params)
+✅ base_model.model.bert.encoder.layer.8: (4 params)
+✅ base_model.model.bert.encoder.layer.9: (4 params)

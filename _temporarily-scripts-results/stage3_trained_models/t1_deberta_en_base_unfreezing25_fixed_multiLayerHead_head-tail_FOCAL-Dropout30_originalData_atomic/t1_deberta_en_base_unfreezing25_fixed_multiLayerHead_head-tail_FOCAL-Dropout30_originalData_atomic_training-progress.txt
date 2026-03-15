@@ -1,0 +1,43 @@
+Epoch  Progress%         ETA  Training Loss  Validation Loss   Accuracy   F1 Macro   F1 Micro
+---------------------------------------------------------------------------------------------
+    1       5.00      00m53s       0.495700         0.397113   0.477273   0.350180   0.477273
+    2      10.00      13m13s       0.463000         0.487174   0.243506   0.247144   0.243506
+    3      15.00      16m07s       0.401600         0.358633   0.350649   0.352029   0.350649
+    4      20.00      16m57s       0.361700         0.338596   0.288961   0.292018   0.288961
+    5      25.00      16m51s       0.338200         0.288000   0.577922   0.503150   0.577922
+    6      30.00      16m21s       0.312800         0.352436   0.564935   0.505377   0.564935
+    7      35.00      15m37s       0.286700         0.390747   0.532468   0.490650   0.532468
+    8      40.00      14m40s       0.288300         0.329393   0.461039   0.455873   0.461039
+    9      45.00      13m38s       0.264900         0.371522   0.347403   0.352985   0.347403
+   10      50.00      12m32s       0.259600         0.346597   0.558442   0.545415   0.558442
+   11      55.00      11m24s       0.243800         0.356455   0.438312   0.434483   0.438312
+   12      60.00      10m12s       0.235700         0.357754   0.418831   0.462203   0.418831
+   13      65.00      08m59s       0.213400         0.385787   0.431818   0.451939   0.431818
+   14      70.00      07m45s       0.213200         0.416044   0.435065   0.439307   0.435065
+   15      75.00      06m30s       0.203300         0.431734   0.389610   0.399516   0.389610
+
+[Final evaluation metrics]
+  eval_loss: 0.3466
+  eval_accuracy: 0.5584
+  eval_f1_macro: 0.5454
+  eval_f1_micro: 0.5584
+  eval_f1_weighted: 0.5706
+  eval_runtime: 2.7983
+  eval_samples_per_second: 110.0690
+  eval_steps_per_second: 7.1470
+  epoch: 10.0000
+  step: 2160
+
+[Layer freezing / trainable parameter summary]
+[Freeze] Embedding layer parameters frozen.
+*_Total encoder layers: 12
+*_Unfreezing from layer 9 to 11
+*_Total parameters:     184,424,451
+*__Trainable parameters: 22,251,267
+*__Trainable ratio:      12.07%
+✅ base_model.encoder: (3 params)
+✅ base_model.encoder.layer.10: (16 params)
+✅ base_model.encoder.layer.11: (16 params)
+✅ base_model.encoder.layer.9: (16 params)
+✅ classifier.fc1: (2 params)
+✅ classifier.fc2: (2 params)

@@ -1,0 +1,47 @@
+Epoch  Progress%         ETA  Training Loss  Validation Loss   Accuracy   F1 Macro   F1 Micro
+---------------------------------------------------------------------------------------------
+    1       5.00      00m21s       1.086800         1.081327   0.311688   0.251440   0.311688
+    2      10.00      05m17s       1.028100         1.052152   0.363636   0.329105   0.363636
+    3      15.00      06m33s       0.934800         0.922456   0.587662   0.523261   0.587662
+    4      20.00      06m54s       0.868800         0.902006   0.597403   0.551188   0.597403
+    5      25.00      06m53s       0.835000         0.852350   0.675325   0.576515   0.675325
+    6      30.00      06m41s       0.792900         0.835416   0.685065   0.572588   0.685065
+    7      35.00      06m23s       0.765100         0.826472   0.662338   0.565653   0.662338
+    8      40.00      06m01s       0.730100         0.840927   0.662338   0.597309   0.662338
+    9      45.00      05m35s       0.723800         0.827856   0.626623   0.539223   0.626623
+   10      50.00      05m09s       0.703600         0.845698   0.659091   0.609430   0.659091
+   11      55.00      04m40s       0.690600         0.844386   0.649351   0.604703   0.649351
+   12      60.00      04m11s       0.686600         0.848090   0.600649   0.532313   0.600649
+   13      65.00      03m41s       0.654400         0.875575   0.642857   0.597080   0.642857
+   14      70.00      03m11s       0.658500         0.866229   0.616883   0.550332   0.616883
+   15      75.00      02m40s       0.646700         0.866865   0.616883   0.552383   0.616883
+
+[Final evaluation metrics]
+  eval_loss: 0.8669
+  eval_accuracy: 0.6169
+  eval_f1_macro: 0.5524
+  eval_f1_micro: 0.6169
+  eval_f1_weighted: 0.6272
+  eval_runtime: 1.1309
+  eval_samples_per_second: 272.3380
+  eval_steps_per_second: 17.6840
+  epoch: 15.0000
+  step: 3240
+
+[Layer freezing / trainable parameter summary]
+*_Total parameters:     110,076,678
+*__Trainable parameters: 594,438
+*__Trainable ratio:      0.54%
+✅ base_model.model: (4 params)
+✅ base_model.model.bert.encoder.layer.0: (4 params)
+✅ base_model.model.bert.encoder.layer.1: (4 params)
+✅ base_model.model.bert.encoder.layer.10: (4 params)
+✅ base_model.model.bert.encoder.layer.11: (4 params)
+✅ base_model.model.bert.encoder.layer.2: (4 params)
+✅ base_model.model.bert.encoder.layer.3: (4 params)
+✅ base_model.model.bert.encoder.layer.4: (4 params)
+✅ base_model.model.bert.encoder.layer.5: (4 params)
+✅ base_model.model.bert.encoder.layer.6: (4 params)
+✅ base_model.model.bert.encoder.layer.7: (4 params)
+✅ base_model.model.bert.encoder.layer.8: (4 params)
+✅ base_model.model.bert.encoder.layer.9: (4 params)

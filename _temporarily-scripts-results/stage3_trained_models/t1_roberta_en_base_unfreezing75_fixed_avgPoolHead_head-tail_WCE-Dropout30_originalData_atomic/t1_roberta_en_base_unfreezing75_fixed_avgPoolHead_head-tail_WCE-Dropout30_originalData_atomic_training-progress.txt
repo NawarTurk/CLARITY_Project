@@ -1,0 +1,43 @@
+Epoch  Progress%         ETA  Training Loss  Validation Loss   Accuracy   F1 Macro   F1 Micro
+---------------------------------------------------------------------------------------------
+    1       5.00      00m18s       1.060300         1.018975   0.253247   0.256888   0.253247
+    2      10.00      05m11s       0.992900         1.040919   0.363636   0.354062   0.363636
+    3      15.00      06m26s       0.900000         0.903283   0.512987   0.469420   0.512987
+    4      20.00      06m47s       0.859700         0.921148   0.512987   0.496349   0.512987
+    5      25.00      06m46s       0.819800         0.888749   0.584416   0.502213   0.584416
+    6      30.00      06m34s       0.765900         1.077295   0.542208   0.480404   0.542208
+    7      35.00      06m15s       0.737700         1.248073   0.425325   0.406347   0.425325
+    8      40.00      05m53s       0.699300         1.029732   0.535714   0.488112   0.535714
+    9      45.00      05m28s       0.685200         1.024512   0.448052   0.442468   0.448052
+   10      50.00      05m01s       0.672200         1.035897   0.451299   0.449610   0.451299
+
+[Final evaluation metrics]
+  eval_loss: 0.8887
+  eval_accuracy: 0.5844
+  eval_f1_macro: 0.5022
+  eval_f1_micro: 0.5844
+  eval_f1_weighted: 0.6046
+  eval_runtime: 0.9611
+  eval_samples_per_second: 320.4740
+  eval_steps_per_second: 20.8100
+  epoch: 5.0000
+  step: 1080
+
+[Layer freezing / trainable parameter summary]
+[Freeze] Embedding layer parameters frozen.
+*_Total encoder layers: 12
+*_Unfreezing from layer 3 to 11
+*_Total parameters:     124,647,939
+*__Trainable parameters: 64,383,747
+*__Trainable ratio:      51.65%
+✅ base_model.encoder.layer.10: (16 params)
+✅ base_model.encoder.layer.11: (16 params)
+✅ base_model.encoder.layer.3: (16 params)
+✅ base_model.encoder.layer.4: (16 params)
+✅ base_model.encoder.layer.5: (16 params)
+✅ base_model.encoder.layer.6: (16 params)
+✅ base_model.encoder.layer.7: (16 params)
+✅ base_model.encoder.layer.8: (16 params)
+✅ base_model.encoder.layer.9: (16 params)
+✅ base_model.pooler: (2 params)
+✅ classifier.fc: (2 params)

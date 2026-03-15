@@ -1,0 +1,58 @@
+Epoch  Progress%         ETA  Training Loss  Validation Loss   Accuracy   F1 Macro   F1 Micro
+---------------------------------------------------------------------------------------------
+    1       5.00      01m01s       1.095300         1.078773   0.227273   0.195088   0.227273
+    2      10.00      16m25s       1.055800         1.007080   0.250000   0.236338   0.250000
+    3      15.00      20m21s       0.904400         0.939746   0.558442   0.486913   0.558442
+    4      20.00      21m38s       0.790900         1.007388   0.636364   0.513492   0.636364
+    5      25.00      21m34s       0.744100         0.798625   0.685065   0.559888   0.685065
+    6      30.00      20m55s       0.667800         0.980621   0.574675   0.516230   0.574675
+    7      35.00      19m57s       0.616300         0.929452   0.639610   0.562788   0.639610
+    8      40.00      18m46s       0.543900         1.107267   0.538961   0.519138   0.538961
+    9      45.00      17m29s       0.493400         1.055730   0.597403   0.545545   0.597403
+   10      50.00      16m05s       0.488200         1.097669   0.623377   0.540746   0.623377
+   11      55.00      14m38s       0.417300         1.147711   0.516234   0.484707   0.516234
+   12      60.00      13m06s       0.369800         1.174130   0.613636   0.549933   0.613636
+
+[Final evaluation metrics]
+  eval_loss: 1.1741
+  eval_accuracy: 0.6136
+  eval_f1_macro: 0.5499
+  eval_f1_micro: 0.6136
+  eval_f1_weighted: 0.6251
+  eval_runtime: 3.3251
+  eval_samples_per_second: 92.6290
+  eval_steps_per_second: 6.0150
+  epoch: 12.0000
+  step: 2592
+
+[Layer freezing / trainable parameter summary]
+[Freeze] Embedding layer parameters frozen.
+*_Top-K unfreezing: top_k=2 (layers 22..23), total_layers=24
+*_Total parameters:     562,519,046
+*__Trainable parameters: 28,870,662
+*__Trainable ratio:      5.1324%
+✅ base_model.model: (8 params)
+✅ base_model.model.roberta.encoder.layer.0: (4 params)
+✅ base_model.model.roberta.encoder.layer.1: (4 params)
+✅ base_model.model.roberta.encoder.layer.10: (4 params)
+✅ base_model.model.roberta.encoder.layer.11: (4 params)
+✅ base_model.model.roberta.encoder.layer.12: (4 params)
+✅ base_model.model.roberta.encoder.layer.13: (4 params)
+✅ base_model.model.roberta.encoder.layer.14: (4 params)
+✅ base_model.model.roberta.encoder.layer.15: (4 params)
+✅ base_model.model.roberta.encoder.layer.16: (4 params)
+✅ base_model.model.roberta.encoder.layer.17: (4 params)
+✅ base_model.model.roberta.encoder.layer.18: (4 params)
+✅ base_model.model.roberta.encoder.layer.19: (4 params)
+✅ base_model.model.roberta.encoder.layer.2: (4 params)
+✅ base_model.model.roberta.encoder.layer.20: (4 params)
+✅ base_model.model.roberta.encoder.layer.21: (4 params)
+✅ base_model.model.roberta.encoder.layer.22: (20 params)
+✅ base_model.model.roberta.encoder.layer.23: (20 params)
+✅ base_model.model.roberta.encoder.layer.3: (4 params)
+✅ base_model.model.roberta.encoder.layer.4: (4 params)
+✅ base_model.model.roberta.encoder.layer.5: (4 params)
+✅ base_model.model.roberta.encoder.layer.6: (4 params)
+✅ base_model.model.roberta.encoder.layer.7: (4 params)
+✅ base_model.model.roberta.encoder.layer.8: (4 params)
+✅ base_model.model.roberta.encoder.layer.9: (4 params)

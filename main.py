@@ -4,7 +4,6 @@ import sys
 from pathlib import Path
 import yaml
 from helpers import generate_f1_report
-from helpers import plot_global_metrics
 from helpers import validate
 
 TRAINING_SCRIPTS = ("train_full", "train_freeze", "train_lora", "train_adapter")
@@ -229,11 +228,7 @@ def main():
         action="store_true",
         help="Generate F1 score reports",
     )
-    parser.add_argument(
-        "--plot",
-        action="store_true",
-        help="Generate plots",
-    )
+
     parser.add_argument(
         "--train_",
         choices=TRAINING_SCRIPTS,
@@ -312,9 +307,7 @@ def main():
     elif args.evaluate:
         print("Generating F1 Score Reports")
         generate_f1_report.main()
-    elif args.plot:
-        print("Generating Plots ...")
-        plot_global_metrics.main()
+
 
     if args.train_stage_2:
         run_stage2_from_config()
