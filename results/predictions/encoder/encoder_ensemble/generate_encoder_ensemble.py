@@ -15,11 +15,12 @@ TARGET_COL = "clarity_label"
 PRED_COL = "predicted_label"
 CONF_COL = "predicted_confidence"
 
-OUTPUT_PATH = SCRIPT_DIR / "t1_encoder-ensemble_en+multi_base+large_encoder-ensemble_fixed_encoder-ensemble_encoder-ensemble_WCE_encoder-ensemble_encoder-ensemble_predictions.csv"
+OUTPUT_PATH = SCRIPT_DIR / "t1_encoder-ensemble_multi_base+large_encoder-ensemble_fixed_encoder-ensemble_encoder-ensemble_WCE_encoder-ensemble_encoder-ensemble_predictions.csv"
 
 
 def majority_vote(labels_by_model, conf_by_model):
     labels = [v for v in labels_by_model.values() if pd.notna(v)]
+    print(len(labels))
     if not labels:
         return None
     counts = Counter(labels)
